@@ -1,0 +1,16 @@
+# Hero Video Placeholder
+
+To add a hero background video:
+
+1. Replace this file with your actual MP4 video
+2. Recommended specs:
+   - Duration: 10-30 seconds
+   - Resolution: 1920x1080 or higher
+   - Format: MP4 (H.264 codec)
+   - File size: Under 5MB for optimal loading
+   - Loop: Yes (seamless loop recommended)
+
+3. Ensure the video is optimized for web:
+   - Use appropriate compression
+   - Consider creating multiple formats (WebM, MP4) for browser compatibility
+   - Add a poster image as fallback

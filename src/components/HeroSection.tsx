@@ -1,0 +1,148 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+
+interface HeroMediaProps {
+  type: 'image' | 'video';
+  src: string;
+  alt?: string;
+  className?: string;
+  fetchPriority?: 'high' | 'auto';
+  onLoad?: () => void;
+  poster?: string;
+}
+
+export function HeroMedia({ 
+  type, 
+  src, 
+  alt = 'Hero background', 
+  className = '', 
+  fetchPriority = 'auto',
+  onLoad,
+  poster
+}: HeroMediaProps) {
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+
+  const handleLoad = () => {
+    setMediaLoaded(true);
+    onLoad?.();
+  };
+
+  const handleError = () => {
+    setMediaError(true);
+  };
+
+  if (type === 'video' && !mediaError) {
+    return (
+      <video
+        src={src}
+        poster={poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className={`w-full h-full object-cover ${className}`}
+        onLoadedData={handleLoad}
+        onError={handleError}
+        preload="metadata"
+      >
+        Your browser does not support the video tag.
+      </video>
+    );
+  }
+
+  return (
+    <img
+      src={type === 'video' && mediaError ? poster || src : src}
+      alt={alt}
+      className={`w-full h-full object-cover ${className}`}
+      fetchPriority={fetchPriority}
+      onLoad={handleLoad}
+      onError={handleError}
+      loading="eager"
+    />
+  );
+}
+
+interface HeroSectionProps {
+  mediaType?: 'image' | 'video';
+  imageSrc?: string;
+  videoSrc?: string;
+  posterSrc?: string;
+  title?: string;
+  subtitle?: string;
+  ctaText?: string;
+  onCtaClick?: () => void;
+  fetchPriority?: 'high' | 'auto';
+  reserveSpace?: boolean;
+  onMediaLoad?: () => void;
+}
+
+export function HeroSection({
+  mediaType = 'image',
+  imageSrc,
+  videoSrc,
+  posterSrc,
+  title = 'Performance Demo Store',
+  subtitle = 'Optimize your Core Web Vitals with HyperCart Lab',
+  ctaText = 'Shop Now',
+  onCtaClick,
+  fetchPriority = 'high',
+  reserveSpace = false,
+  onMediaLoad
+}: HeroSectionProps) {
+  const mediaSrc = mediaType === 'video' ? videoSrc : imageSrc;
+
+  if (!mediaSrc) {
+    return (
+      <section className={`hero-container ${reserveSpace ? 'reserved-space' : ''} bg-muted`}>
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-4 text-foreground">{title}</h1>
+            <p className="text-xl mb-8 text-muted-foreground">{subtitle}</p>
+            <Button 
+              size="lg" 
+              className="bg-accent hover:bg-accent/90"
+              onClick={onCtaClick}
+            >
+              {ctaText}
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section 
+      className={`hero-container ${reserveSpace ? 'reserved-space' : ''}`}
+      data-cy="hero-section"
+    >
+      <div className="relative w-full h-full">
+        <HeroMedia
+          type={mediaType}
+          src={mediaSrc}
+          alt="Hero background"
+          fetchPriority={fetchPriority}
+          onLoad={onMediaLoad}
+          poster={posterSrc}
+        />
+        
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="text-center text-white px-4">
+            <h1 className="text-5xl font-bold mb-4">{title}</h1>
+            <p className="text-xl mb-8">{subtitle}</p>
+            <Button 
+              size="lg" 
+              className="bg-accent hover:bg-accent/90"
+              onClick={onCtaClick}
+              data-cy="shop-now-cta"
+            >
+              {ctaText}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

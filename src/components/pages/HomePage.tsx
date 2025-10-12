@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { HeroSection } from '@/components/HeroSection';
+import { HeroResourceGuide } from '@/components/HeroResourceGuide';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
 
 import heroJpg from '@/assets/images/hero.jpg';
+import heroAltJpg from '@/assets/images/hero-alt.jpg';
+import heroPosterJpg from '@/assets/images/hero-poster.jpg';
+import heroVideoMp4 from '@/assets/video/hero-background.mp4';
 
 export function HomePage() {
   const [showLateBanner, setShowLateBanner] = useState(false);
+  const [heroMediaType, setHeroMediaType] = useState<'image' | 'video'>('image');
   const flags = getFlags();
 
   useEffect(() => {
     addPerformanceMark('home-page-start');
 
-    // Handle hero preload
+    // Handle hero preload - prefer image for better performance
     const heroSrc = heroJpg;
     
     if (flags.heroPreload) {
@@ -33,7 +39,10 @@ export function HomePage() {
     measurePerformance('home-page-load', 'home-page-start', 'home-page-end');
   }, [flags]);
 
-  const heroSrc = heroJpg;
+  const handleHeroMediaLoad = () => {
+    addPerformanceMark('hero-image-loaded');
+    measurePerformance('hero-load-time', 'home-page-start', 'hero-image-loaded');
+  };
 
   return (
     <div className="min-h-screen">
@@ -52,44 +61,44 @@ export function HomePage() {
       )}
 
       {/* Hero section */}
-      <section 
-        className={`hero-container ${flags.reserveHeroSpace ? 'reserved-space' : ''}`}
-        data-cy="hero-section"
-      >
-        <div className="relative w-full h-full">
-          <img
-            src={heroSrc}
-            alt="HyperCart Hero"
-            className="w-full h-full object-cover"
-            fetchPriority={flags.heroFetchPriorityHigh ? 'high' : 'auto'}
-            style={flags.reserveHeroSpace ? { width: '100%', height: '100%' } : undefined}
-            onLoad={() => {
-              addPerformanceMark('hero-image-loaded');
-              measurePerformance('hero-load-time', 'home-page-start', 'hero-image-loaded');
-            }}
-            data-cy="hero-image"
-          />
-          
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <div className="text-center text-white">
-              <h1 className="text-5xl font-bold mb-4">Performance Demo Store</h1>
-              <p className="text-xl mb-8">Optimize your Core Web Vitals with HyperCart Lab</p>
-              <Button 
-                size="lg" 
-                className="bg-accent hover:bg-accent/90"
-                data-cy="shop-now-cta"
-              >
-                Shop Now
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSection
+        mediaType={heroMediaType}
+        imageSrc={heroJpg}
+        videoSrc={heroVideoMp4}
+        posterSrc={heroPosterJpg}
+        fetchPriority={flags.heroFetchPriorityHigh ? 'high' : 'auto'}
+        reserveSpace={flags.reserveHeroSpace}
+        onMediaLoad={handleHeroMediaLoad}
+      />
 
       {/* Content sections */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-8">Welcome to HyperCart Lab</h2>
+          
+          {/* Hero Media Controls */}
+          <div className="mb-8 p-6 border rounded-lg bg-muted/30">
+            <h3 className="text-lg font-semibold mb-4">Hero Media Options</h3>
+            <div className="flex justify-center gap-4">
+              <Button
+                variant={heroMediaType === 'image' ? 'default' : 'outline'}
+                onClick={() => setHeroMediaType('image')}
+                size="sm"
+              >
+                📸 Image Hero
+              </Button>
+              <Button
+                variant={heroMediaType === 'video' ? 'default' : 'outline'}
+                onClick={() => setHeroMediaType('video')}
+                size="sm"
+              >
+                🎥 Video Hero
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Switch between image and video hero backgrounds to see performance differences
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">LCP Optimization</h3>
@@ -111,7 +120,7 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto mb-12">
             <h2 className="text-2xl font-bold mb-4">Performance Demo Features</h2>
             <p className="text-muted-foreground mb-6">
               This demo showcases web performance optimization techniques using beautiful product images.
@@ -123,6 +132,8 @@ export function HomePage() {
               </p>
             </div>
           </div>
+
+          <HeroResourceGuide className="max-w-2xl mx-auto" />
         </div>
       </section>
     </div>
