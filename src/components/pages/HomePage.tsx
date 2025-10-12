@@ -104,13 +104,13 @@ export function HomePage() {
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">LCP Optimization</h3>
               <p className="text-muted-foreground">
-                Learn how hero image preloading and fetch priority improve Largest Contentful Paint.
+                Optimize Largest Contentful Paint by preloading critical images and using proper sizing.
               </p>
             </div>
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">CLS Prevention</h3>
               <p className="text-muted-foreground">
-                See how reserving space prevents Cumulative Layout Shift when content loads.
+                Reserve space for dynamic content to prevent Cumulative Layout Shift.
               </p>
             </div>
             <div className="p-6 border rounded-lg">
