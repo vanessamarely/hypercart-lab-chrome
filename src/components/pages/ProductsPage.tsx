@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
-import { Product } from '@/lib/types';
+import { Product, CartItem } from '@/lib/types';
 import { getUnsplashImageUrl, preloadUnsplashImages } from '@/lib/unsplash';
+import { CartAddedModal } from '@/components/CartAddedModal';
+import { ShoppingCart } from '@phosphor-icons/react';
 
 // Product categories for better image matching
 const CATEGORIES = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'];
@@ -84,11 +87,15 @@ const generateProducts = async (): Promise<Product[]> => {
 
 interface ProductsPageProps {
   onProductClick: (productId: number) => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function ProductsPage({ onProductClick }: ProductsPageProps) {
+export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) {
+  const [cart, setCart] = useKV<CartItem[]>('hypercart-cart', []);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [addedProduct, setAddedProduct] = useState<Product | null>(null);
   const flags = getFlags();
 
   useEffect(() => {
@@ -118,6 +125,35 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
     // Use setTimeout to simulate async rendering
     setTimeout(renderProducts, 100);
   }, []);
+
+  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    addPerformanceMark('add-to-cart-start');
+
+    // Add to cart
+    const currentCart = cart || [];
+    const existingItem = currentCart.find(item => item.product.id === product.id);
+    
+    if (existingItem) {
+      setCart(prev => 
+        (prev || []).map(item => 
+          item.product.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      setCart(prev => [...(prev || []), { product, quantity: 1 }]);
+    }
+
+    addPerformanceMark('add-to-cart-end');
+    measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
+    
+    // Show the modal
+    setAddedProduct(product);
+    setShowCartModal(true);
+  };
 
   if (loading) {
     return (
@@ -149,6 +185,8 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
       </div>
     );
   }
+
+  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen p-4">
@@ -205,21 +243,44 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
                     </div>
                   </div>
                   
-                  <Button 
-                    size="sm" 
-                    disabled={!product.inStock}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onProductClick(product.id);
-                    }}
-                  >
-                    View Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      disabled={!product.inStock}
+                      onClick={(e) => handleAddToCart(product, e)}
+                      className="p-2"
+                    >
+                      <ShoppingCart size={16} />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      disabled={!product.inStock}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onProductClick(product.id);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        <CartAddedModal
+          open={showCartModal}
+          onOpenChange={setShowCartModal}
+          product={addedProduct}
+          totalCartItems={totalCartItems}
+          onContinueShopping={() => setShowCartModal(false)}
+          onViewCart={() => {
+            setShowCartModal(false);
+            onNavigate?.('checkout');
+          }}
+        />
       </div>
     </div>
   );

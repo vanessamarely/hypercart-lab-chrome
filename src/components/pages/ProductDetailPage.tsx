@@ -14,6 +14,7 @@ import {
 } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
 import { getUnsplashImageUrl } from '@/lib/unsplash';
+import { CartAddedModal } from '@/components/CartAddedModal';
 
 // Product data for different categories
 const PRODUCT_DATA = {
@@ -49,6 +50,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
   const [isLoading, setIsLoading] = useState(false);
   const [formattedData, setFormattedData] = useState<any>(null);
   const [product, setProduct] = useState<Product | null>(null);
+  const [showCartModal, setShowCartModal] = useState(false);
   const flags = getFlags();
 
   useEffect(() => {
@@ -184,6 +186,9 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       addPerformanceMark('add-to-cart-end');
       measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
       
+      // Show the modal
+      setShowCartModal(true);
+      
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +203,8 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       </div>
     );
   }
+
+  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen p-4">
@@ -304,6 +311,21 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
             </div>
           </div>
         </div>
+
+        <CartAddedModal
+          open={showCartModal}
+          onOpenChange={setShowCartModal}
+          product={product}
+          totalCartItems={totalCartItems}
+          onContinueShopping={() => {
+            setShowCartModal(false);
+            onNavigate('products');
+          }}
+          onViewCart={() => {
+            setShowCartModal(false);
+            onNavigate('checkout');
+          }}
+        />
       </div>
     </div>
   );

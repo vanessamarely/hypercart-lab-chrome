@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
-import { Product } from '@/lib/types';
+import { Product, CartItem } from '@/lib/types';
 import { getUnsplashImageUrl } from '@/lib/unsplash';
+import { CartAddedModal } from '@/components/CartAddedModal';
+import { ShoppingCart } from '@phosphor-icons/react';
 
 // Product data for search
 const PRODUCT_NAMES = {
@@ -45,15 +48,19 @@ const generateSearchProducts = async (): Promise<Product[]> => {
 
 interface SearchPageProps {
   onProductClick: (productId: number) => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function SearchPage({ onProductClick }: SearchPageProps) {
+export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
+  const [cart, setCart] = useKV<CartItem[]>('hypercart-cart', []);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
   const [searchProducts, setSearchProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [addedProduct, setAddedProduct] = useState<Product | null>(null);
   const flags = getFlags();
 
   useEffect(() => {
@@ -151,6 +158,37 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
     };
   }, [debounceTimer]);
 
+  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    addPerformanceMark('add-to-cart-start');
+
+    // Add to cart
+    const currentCart = cart || [];
+    const existingItem = currentCart.find(item => item.product.id === product.id);
+    
+    if (existingItem) {
+      setCart(prev => 
+        (prev || []).map(item => 
+          item.product.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      setCart(prev => [...(prev || []), { product, quantity: 1 }]);
+    }
+
+    addPerformanceMark('add-to-cart-end');
+    measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
+    
+    // Show the modal
+    setAddedProduct(product);
+    setShowCartModal(true);
+  };
+
+  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto">
@@ -222,7 +260,26 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
                         <span className="text-sm text-muted-foreground">
                           {product.category}
                         </span>
-                        <Button size="sm">View Details</Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            disabled={!product.inStock}
+                            onClick={(e) => handleAddToCart(product, e)}
+                            className="p-2"
+                          >
+                            <ShoppingCart size={16} />
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onProductClick(product.id);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -237,6 +294,18 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
             </div>
           )}
         </div>
+
+        <CartAddedModal
+          open={showCartModal}
+          onOpenChange={setShowCartModal}
+          product={addedProduct}
+          totalCartItems={totalCartItems}
+          onContinueShopping={() => setShowCartModal(false)}
+          onViewCart={() => {
+            setShowCartModal(false);
+            onNavigate?.('checkout');
+          }}
+        />
       </div>
     </div>
   );

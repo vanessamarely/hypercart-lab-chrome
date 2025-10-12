@@ -36,7 +36,7 @@ function App() {
       case 'home':
         return <HomePage />;
       case 'products':
-        return <ProductsPage onProductClick={handleProductClick} />;
+        return <ProductsPage onProductClick={handleProductClick} onNavigate={handleNavigation} />;
       case 'product-detail':
         return selectedProductId ? (
           <ProductDetailPage 
@@ -44,10 +44,10 @@ function App() {
             onNavigate={handleNavigation}
           />
         ) : (
-          <ProductsPage onProductClick={handleProductClick} />
+          <ProductsPage onProductClick={handleProductClick} onNavigate={handleNavigation} />
         );
       case 'search':
-        return <SearchPage onProductClick={handleProductClick} />;
+        return <SearchPage onProductClick={handleProductClick} onNavigate={handleNavigation} />;
       case 'checkout':
         return <CheckoutPage onNavigate={handleNavigation} />;
       default:
