@@ -1,0 +1,202 @@
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { getFlags } from '@/lib/performance-flags';
+import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
+import { Product } from '@/lib/types';
+import productImage from '@/assets/images/product-1.webp';
+
+// Generate sample products for search
+const SEARCH_PRODUCTS: Product[] = Array.from({ length: 200 }, (_, i) => ({
+  id: i + 1,
+  name: `${['Premium', 'Deluxe', 'Essential', 'Pro', 'Classic'][i % 5]} Product ${i + 1}`,
+  description: `High-quality ${['electronics', 'clothing', 'home', 'sports', 'books'][i % 5]} item with excellent features.`,
+  price: Math.floor(Math.random() * 500) + 10,
+  category: ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'][i % 5],
+  rating: Number((Math.random() * 2 + 3).toFixed(1)),
+  inStock: Math.random() > 0.1,
+  image: productImage,
+}));
+
+interface SearchPageProps {
+  onProductClick: (productId: number) => void;
+}
+
+export function SearchPage({ onProductClick }: SearchPageProps) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const flags = getFlags();
+
+  // Simple search function
+  const performSearch = async (searchQuery: string) => {
+    addPerformanceMark('search-start');
+    setIsSearching(true);
+
+    try {
+      const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+      
+      if (searchTerms.length === 0) {
+        setResults([]);
+        return;
+      }
+
+      // Simulate heavy computation
+      for (let i = 0; i < 50000; i++) {
+        Math.sin(i) * Math.cos(i);
+      }
+
+      let filteredResults: Product[] = [];
+
+      if (flags.microYield) {
+        // Process in chunks with yields
+        const chunkSize = 50;
+        for (let i = 0; i < SEARCH_PRODUCTS.length; i += chunkSize) {
+          const chunk = SEARCH_PRODUCTS.slice(i, i + chunkSize);
+          const chunkResults = chunk.filter(product => 
+            searchTerms.every(term => 
+              product.name.toLowerCase().includes(term) ||
+              product.description.toLowerCase().includes(term) ||
+              product.category.toLowerCase().includes(term)
+            )
+          );
+          filteredResults = [...filteredResults, ...chunkResults];
+          
+          await microYield();
+        }
+      } else {
+        // Process all at once (blocking)
+        filteredResults = SEARCH_PRODUCTS.filter(product => 
+          searchTerms.every(term => 
+            product.name.toLowerCase().includes(term) ||
+            product.description.toLowerCase().includes(term) ||
+            product.category.toLowerCase().includes(term)
+          )
+        );
+      }
+
+      setResults(filteredResults.slice(0, 20));
+    } finally {
+      setIsSearching(false);
+      addPerformanceMark('search-end');
+      measurePerformance('search-operation', 'search-start', 'search-end');
+    }
+  };
+
+  // Handle input change with debouncing
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    // Clear existing timer
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    if (flags.debounce) {
+      // Debounced search
+      const timer = setTimeout(() => {
+        performSearch(value);
+      }, 300);
+      setDebounceTimer(timer);
+    } else {
+      // Immediate search (can cause input lag)
+      performSearch(value);
+    }
+  };
+
+  useEffect(() => {
+    addPerformanceMark('search-page-load');
+    
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
+
+  return (
+    <div className="min-h-screen p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-4">Search Products</h1>
+          <p className="text-muted-foreground mb-6">
+            Search through our catalog. Use debug panel to toggle input responsiveness optimizations.
+          </p>
+          
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search for products..."
+              value={query}
+              onChange={handleInputChange}
+              className="text-lg p-4"
+              data-cy="search-input"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search Results */}
+        <div className="space-y-4">
+          {query && (
+            <div className="text-sm text-muted-foreground">
+              Found {results.length} results for "{query}"
+              {flags.debounce && ' (debounced)'}
+              {flags.microYield && ' (with micro-yields)'}
+            </div>
+          )}
+
+          {results.map((product) => (
+            <Card 
+              key={product.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => onProductClick(product.id)}
+              data-cy={`search-result-${product.id}`}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-4">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {product.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-primary">
+                        ${product.price}
+                      </span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm">⭐ {product.rating}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {product.category}
+                        </span>
+                        <Button size="sm">View Details</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {query && results.length === 0 && !isSearching && (
+            <div className="text-center py-12 text-muted-foreground">
+              No products found for "{query}". Try a different search term.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
