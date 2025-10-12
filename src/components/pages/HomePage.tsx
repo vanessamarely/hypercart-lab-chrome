@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
-import { UnsplashConfig } from '@/components/UnsplashConfig';
+
 import heroLarge from '@/assets/images/hero@2x.webp';
 import heroOptimized from '@/assets/images/hero.webp';
 
@@ -112,13 +112,17 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Unsplash Configuration Section */}
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-4">Product Image Configuration</h2>
+            <h2 className="text-2xl font-bold mb-4">Performance Demo Features</h2>
             <p className="text-muted-foreground mb-6">
-              Product images are powered by Unsplash. Configure an API key for enhanced image quality and reliability.
+              This demo showcases web performance optimization techniques using real product images from Unsplash.
             </p>
-            <UnsplashConfig />
+            <div className="p-6 border rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">
+                <strong>Image Source:</strong> Product images are fetched from Unsplash API using the access key configured in your .env file. 
+                Add your <code>VITE_UNSPLASH_ACCESS_KEY</code> to the .env file for high-quality images.
+              </p>
+            </div>
           </div>
         </div>
       </section>

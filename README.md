@@ -8,6 +8,12 @@ A production-ready React + TypeScript demo application designed for Chrome DevTo
 # Install dependencies
 npm install
 
+# Configure Unsplash API (optional but recommended)
+# 1. Copy .env file and add your Unsplash access key
+cp .env .env.local
+# 2. Edit .env.local and replace 'your_unsplash_access_key_here' with your actual key
+# Get your key from: https://unsplash.com/developers
+
 # Start development server
 npm run dev
 
@@ -20,6 +26,23 @@ npm run build
 # Serve production build
 npm run preview
 ```
+
+## Configuration
+
+### Unsplash API Setup
+
+The app uses Unsplash for product images. For best image quality and reliability:
+
+1. Visit [unsplash.com/developers](https://unsplash.com/developers)
+2. Create an application to get your Access Key
+3. Add your key to `.env` file:
+
+```bash
+VITE_UNSPLASH_ACCESS_KEY=your_actual_access_key_here
+```
+
+**Without API key**: Falls back to free Unsplash Source API (may have rate limits)
+**With API key**: Uses official Unsplash API (higher quality, more reliable)
 
 ## Debug Panel Access
 

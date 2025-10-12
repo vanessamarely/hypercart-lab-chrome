@@ -30,6 +30,12 @@ const CATEGORY_SEARCH_TERMS = {
 // Cache for storing fetched images to avoid repeated API calls
 const imageCache = new Map<string, string>();
 
+/**
+ * Get Unsplash image URL for a given category
+ * Uses VITE_UNSPLASH_ACCESS_KEY from .env file if available,
+ * otherwise falls back to free Unsplash Source API
+ */
+
 export async function getUnsplashImageUrl(category: string, seed?: number): Promise<string> {
   const cacheKey = `${category}-${seed || 0}`;
   
@@ -39,14 +45,11 @@ export async function getUnsplashImageUrl(category: string, seed?: number): Prom
   }
 
   try {
-    // Check if user has configured an API key (only available in browser environment)
-    let apiKey: string | undefined;
-    if (typeof window !== 'undefined' && window.spark) {
-      apiKey = await window.spark.kv.get<string>('unsplash-api-key');
-    }
+    // Get API key from environment variables
+    const apiKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
     
-    if (apiKey) {
-      // Use official API with user's key
+    if (apiKey && apiKey !== 'your_unsplash_access_key_here') {
+      // Use official API with environment key
       return await getUnsplashImageUrlWithAPI(category, apiKey, seed);
     }
     

@@ -156,7 +156,7 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">Product Catalog</h1>
           <p className="text-muted-foreground">
-            Browse our collection of products featuring high-quality images from Unsplash.
+            Browse our collection of products featuring high-quality images from Unsplash API.
           </p>
         </div>
 
