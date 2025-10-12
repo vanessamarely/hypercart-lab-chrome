@@ -5,29 +5,106 @@ import { Badge } from '@/components/ui/badge';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { Product } from '@/lib/types';
-import productImage from '@/assets/images/product-1.webp';
+import { getUnsplashImageUrl, preloadUnsplashImages } from '@/lib/unsplash';
 
-const SAMPLE_PRODUCTS: Product[] = Array.from({ length: 30 }, (_, i) => ({
-  id: i + 1,
-  name: `Premium Product ${i + 1}`,
-  description: `High-quality product with excellent features and reliable performance. Perfect for demonstration.`,
-  price: Math.floor(Math.random() * 500) + 20,
-  category: ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'][i % 5],
-  rating: Number((Math.random() * 2 + 3).toFixed(1)),
-  inStock: Math.random() > 0.1,
-  image: productImage,
-}));
+// Product categories for better image matching
+const CATEGORIES = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'];
+
+// Product names that match categories better
+const PRODUCT_NAMES = {
+  Electronics: [
+    'Wireless Bluetooth Headphones',
+    'Smart Fitness Watch',
+    'Portable Phone Charger',
+    'HD Webcam',
+    'Mechanical Keyboard',
+    '4K Action Camera'
+  ],
+  Clothing: [
+    'Premium Cotton T-Shirt',
+    'Denim Jacket',
+    'Running Sneakers',
+    'Casual Summer Dress',
+    'Winter Wool Coat',
+    'Athletic Joggers'
+  ],
+  Home: [
+    'Modern Table Lamp',
+    'Decorative Wall Mirror',
+    'Ceramic Coffee Mug Set',
+    'Bamboo Cutting Board',
+    'Cozy Throw Blanket',
+    'Minimalist Wall Clock'
+  ],
+  Sports: [
+    'Yoga Mat Pro',
+    'Resistance Band Set',
+    'Water Bottle Steel',
+    'Foam Roller',
+    'Workout Gloves',
+    'Jump Rope'
+  ],
+  Books: [
+    'Productivity Handbook',
+    'Creative Writing Guide',
+    'Photography Masterclass',
+    'Cooking Essentials',
+    'Mindfulness Journal',
+    'Tech Innovation Book'
+  ]
+};
+
+// Generate products with better names and descriptions
+const generateProducts = async (): Promise<Product[]> => {
+  const products: Product[] = [];
+  
+  for (let i = 0; i < 30; i++) {
+    const category = CATEGORIES[i % 5];
+    const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
+    const productName = categoryProducts[i % categoryProducts.length];
+    
+    // Get Unsplash image for the category
+    const image = await getUnsplashImageUrl(category, i);
+    
+    products.push({
+      id: i + 1,
+      name: productName,
+      description: `High-quality ${category.toLowerCase()} product with excellent features and reliable performance. Perfect for everyday use.`,
+      price: Math.floor(Math.random() * 500) + 20,
+      category,
+      rating: Number((Math.random() * 2 + 3).toFixed(1)),
+      inStock: Math.random() > 0.1,
+      image,
+      imageAlt: `${productName} - ${category} product`
+    });
+  }
+  
+  return products;
+};
 
 interface ProductsPageProps {
   onProductClick: (productId: number) => void;
 }
 
 export function ProductsPage({ onProductClick }: ProductsPageProps) {
-  const [products] = useState<Product[]>(SAMPLE_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const flags = getFlags();
 
   useEffect(() => {
     addPerformanceMark('products-page-start');
+    
+    // Preload images for better performance
+    preloadUnsplashImages(['Electronics', 'Clothing', 'Home', 'Sports', 'Books']);
+    
+    // Generate products with Unsplash images
+    generateProducts().then(generatedProducts => {
+      setProducts(generatedProducts);
+      setLoading(false);
+      
+      addPerformanceMark('products-page-end');
+      measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
+    });
     
     // Simulate rendering products
     const renderProducts = () => {
@@ -39,11 +116,39 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
     };
 
     // Use setTimeout to simulate async rendering
-    setTimeout(renderProducts, 0);
-
-    addPerformanceMark('products-page-end');
-    measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
+    setTimeout(renderProducts, 100);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-4">Product Catalog</h1>
+            <p className="text-muted-foreground">
+              Loading products with beautiful Unsplash images...
+            </p>
+          </div>
+          <div className="product-grid">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Card key={i} className="product-card">
+                <div className="skeleton w-full h-48 rounded-t-lg"></div>
+                <CardContent className="p-4">
+                  <div className="skeleton h-4 w-3/4 mb-2"></div>
+                  <div className="skeleton h-3 w-full mb-1"></div>
+                  <div className="skeleton h-3 w-2/3 mb-3"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="skeleton h-6 w-16"></div>
+                    <div className="skeleton h-8 w-20 rounded"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4">
@@ -51,7 +156,7 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">Product Catalog</h1>
           <p className="text-muted-foreground">
-            Browse our collection of products. Use debug panel to toggle performance issues.
+            Browse our collection of products featuring high-quality images from Unsplash.
           </p>
         </div>
 
@@ -63,11 +168,11 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
               onClick={() => onProductClick(product.id)}
               data-cy={`product-card-${product.id}`}
             >
-              <div className="relative">
+              <div className="relative overflow-hidden">
                 <img
                   src={product.image}
-                  alt={product.name}
-                  className={`product-image ${flags.missingSizes ? 'no-dimensions' : ''}`}
+                  alt={product.imageAlt || product.name}
+                  className={`product-image object-cover transition-transform hover:scale-105 ${flags.missingSizes ? 'no-dimensions' : ''}`}
                   loading={flags.lazyOff ? 'eager' : 'lazy'}
                   style={!flags.missingSizes ? { width: '100%', height: '200px' } : undefined}
                   data-cy="product-image"
@@ -77,6 +182,9 @@ export function ProductsPage({ onProductClick }: ProductsPageProps) {
                     Out of Stock
                   </Badge>
                 )}
+                <Badge className="absolute top-2 left-2 bg-primary/90 text-primary-foreground">
+                  {product.category}
+                </Badge>
               </div>
               
               <CardContent className="p-4">

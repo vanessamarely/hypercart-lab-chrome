@@ -34,6 +34,7 @@ export interface Product {
   rating: number;
   inStock: boolean;
   image: string;
+  imageAlt?: string;
 }
 
 export interface CartItem {

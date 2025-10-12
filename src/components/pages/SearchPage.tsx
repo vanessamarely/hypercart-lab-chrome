@@ -5,19 +5,43 @@ import { Button } from '@/components/ui/button';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
 import { Product } from '@/lib/types';
-import productImage from '@/assets/images/product-1.webp';
+import { getUnsplashImageUrl } from '@/lib/unsplash';
 
-// Generate sample products for search
-const SEARCH_PRODUCTS: Product[] = Array.from({ length: 200 }, (_, i) => ({
-  id: i + 1,
-  name: `${['Premium', 'Deluxe', 'Essential', 'Pro', 'Classic'][i % 5]} Product ${i + 1}`,
-  description: `High-quality ${['electronics', 'clothing', 'home', 'sports', 'books'][i % 5]} item with excellent features.`,
-  price: Math.floor(Math.random() * 500) + 10,
-  category: ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'][i % 5],
-  rating: Number((Math.random() * 2 + 3).toFixed(1)),
-  inStock: Math.random() > 0.1,
-  image: productImage,
-}));
+// Product data for search
+const PRODUCT_NAMES = {
+  Electronics: ['Wireless Headphones', 'Smart Watch', 'Phone Charger', 'HD Webcam', 'Keyboard', 'Action Camera'],
+  Clothing: ['Cotton T-Shirt', 'Denim Jacket', 'Running Shoes', 'Summer Dress', 'Wool Coat', 'Joggers'],
+  Home: ['Table Lamp', 'Wall Mirror', 'Coffee Mug Set', 'Cutting Board', 'Throw Blanket', 'Wall Clock'],
+  Sports: ['Yoga Mat', 'Resistance Bands', 'Water Bottle', 'Foam Roller', 'Workout Gloves', 'Jump Rope'],
+  Books: ['Productivity Guide', 'Writing Manual', 'Photo Book', 'Cookbook', 'Journal', 'Tech Book']
+};
+
+// Generate sample products for search with Unsplash images
+const generateSearchProducts = async (): Promise<Product[]> => {
+  const products: Product[] = [];
+  const categories = Object.keys(PRODUCT_NAMES);
+  
+  for (let i = 0; i < 50; i++) {
+    const category = categories[i % categories.length];
+    const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
+    const productName = categoryProducts[i % categoryProducts.length];
+    const image = await getUnsplashImageUrl(category, i);
+    
+    products.push({
+      id: i + 1,
+      name: `${['Premium', 'Deluxe', 'Essential', 'Pro', 'Classic'][i % 5]} ${productName}`,
+      description: `High-quality ${category.toLowerCase()} item with excellent features and modern design.`,
+      price: Math.floor(Math.random() * 500) + 10,
+      category,
+      rating: Number((Math.random() * 2 + 3).toFixed(1)),
+      inStock: Math.random() > 0.1,
+      image,
+      imageAlt: `${productName} - ${category} product`
+    });
+  }
+  
+  return products;
+};
 
 interface SearchPageProps {
   onProductClick: (productId: number) => void;
@@ -28,7 +52,17 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
   const [results, setResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [searchProducts, setSearchProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const flags = getFlags();
+
+  useEffect(() => {
+    // Generate search products on component mount
+    generateSearchProducts().then(products => {
+      setSearchProducts(products);
+      setLoading(false);
+    });
+  }, []);
 
   // Simple search function
   const performSearch = async (searchQuery: string) => {
@@ -53,8 +87,8 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
       if (flags.microYield) {
         // Process in chunks with yields
         const chunkSize = 50;
-        for (let i = 0; i < SEARCH_PRODUCTS.length; i += chunkSize) {
-          const chunk = SEARCH_PRODUCTS.slice(i, i + chunkSize);
+        for (let i = 0; i < searchProducts.length; i += chunkSize) {
+          const chunk = searchProducts.slice(i, i + chunkSize);
           const chunkResults = chunk.filter(product => 
             searchTerms.every(term => 
               product.name.toLowerCase().includes(term) ||
@@ -68,7 +102,7 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
         }
       } else {
         // Process all at once (blocking)
-        filteredResults = SEARCH_PRODUCTS.filter(product => 
+        filteredResults = searchProducts.filter(product => 
           searchTerms.every(term => 
             product.name.toLowerCase().includes(term) ||
             product.description.toLowerCase().includes(term) ||
@@ -123,7 +157,7 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">Search Products</h1>
           <p className="text-muted-foreground mb-6">
-            Search through our catalog. Use debug panel to toggle input responsiveness optimizations.
+            Search through our catalog with beautiful Unsplash images. Use debug panel to toggle input responsiveness optimizations.
           </p>
           
           <div className="relative">
@@ -134,18 +168,25 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
               onChange={handleInputChange}
               className="text-lg p-4"
               data-cy="search-input"
+              disabled={loading}
             />
-            {isSearching && (
+            {(isSearching || loading) && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
               </div>
             )}
           </div>
+          
+          {loading && (
+            <div className="text-center text-muted-foreground mt-4">
+              Loading products with Unsplash images...
+            </div>
+          )}
         </div>
 
         {/* Search Results */}
         <div className="space-y-4">
-          {query && (
+          {query && !loading && (
             <div className="text-sm text-muted-foreground">
               Found {results.length} results for "{query}"
               {flags.debounce && ' (debounced)'}
@@ -164,7 +205,7 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
                 <div className="flex items-start space-x-4">
                   <img
                     src={product.image}
-                    alt={product.name}
+                    alt={product.imageAlt || product.name}
                     className="w-20 h-20 object-cover rounded"
                   />
                   <div className="flex-1">
@@ -190,7 +231,7 @@ export function SearchPage({ onProductClick }: SearchPageProps) {
             </Card>
           ))}
 
-          {query && results.length === 0 && !isSearching && (
+          {query && results.length === 0 && !isSearching && !loading && (
             <div className="text-center py-12 text-muted-foreground">
               No products found for "{query}". Try a different search term.
             </div>

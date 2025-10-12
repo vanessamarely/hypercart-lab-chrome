@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
+import { UnsplashConfig } from '@/components/UnsplashConfig';
 import heroLarge from '@/assets/images/hero@2x.webp';
 import heroOptimized from '@/assets/images/hero.webp';
 
@@ -90,7 +91,7 @@ export function HomePage() {
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-8">Welcome to HyperCart Lab</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">LCP Optimization</h3>
               <p className="text-muted-foreground">
@@ -109,6 +110,15 @@ export function HomePage() {
                 Use Chrome DevTools Performance panel to measure and optimize your app.
               </p>
             </div>
+          </div>
+
+          {/* Unsplash Configuration Section */}
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4">Product Image Configuration</h2>
+            <p className="text-muted-foreground mb-6">
+              Product images are powered by Unsplash. Configure an API key for enhanced image quality and reliability.
+            </p>
+            <UnsplashConfig />
           </div>
         </div>
       </section>
