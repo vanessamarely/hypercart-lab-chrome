@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
 
-import heroLarge from '@/assets/images/hero@2x.webp';
-import heroOptimized from '@/assets/images/hero.webp';
 import heroJpg from '@/assets/images/hero.jpg';
 
 export function HomePage() {
@@ -15,7 +13,7 @@ export function HomePage() {
     addPerformanceMark('home-page-start');
 
     // Handle hero preload
-    const heroSrc = flags.heroFetchPriorityHigh ? heroLarge : heroOptimized;
+    const heroSrc = heroJpg;
     
     if (flags.heroPreload) {
       addHeroPreload(heroSrc);
@@ -35,7 +33,7 @@ export function HomePage() {
     measurePerformance('home-page-load', 'home-page-start', 'home-page-end');
   }, [flags]);
 
-  const heroSrc = flags.heroFetchPriorityHigh ? heroLarge : heroOptimized;
+  const heroSrc = heroJpg;
 
   return (
     <div className="min-h-screen">
