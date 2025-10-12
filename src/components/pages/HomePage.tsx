@@ -92,13 +92,14 @@ export function HomePage() {
                 onClick={() => setHeroMediaType('video')}
                 size="sm"
               >
-                🎥 Video Hero
+                🎬 Video Hero
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Switch between image and video hero backgrounds to see performance differences
             </p>
           </div>
+
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">LCP Optimization</h3>
