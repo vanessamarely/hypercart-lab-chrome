@@ -28,7 +28,7 @@ const generateSearchProducts = (): Product[] => {
     const category = categories[i % categories.length];
     const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
     const productName = categoryProducts[i % categoryProducts.length];
-    const image = getProductImage(i + 1, true);
+    const image = getProductImage(i + 1);
     const imageAlt = getProductImageAlt(i + 1, productName);
     
     products.push({

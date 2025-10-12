@@ -67,7 +67,7 @@ const generateProducts = (): Product[] => {
     const productName = categoryProducts[i % categoryProducts.length];
     
     // Get local product image
-    const image = getProductImage(i + 1, true);
+    const image = getProductImage(i + 1);
     const imageAlt = getProductImageAlt(i + 1, productName);
     
     products.push({

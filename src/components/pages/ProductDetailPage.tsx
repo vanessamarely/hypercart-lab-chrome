@@ -60,7 +60,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       const categoryProducts = PRODUCT_DATA[category as keyof typeof PRODUCT_DATA];
       const productName = categoryProducts[productId % categoryProducts.length];
       
-      const image = getProductImage(productId, true);
+      const image = getProductImage(productId);
       const imageAlt = getProductImageAlt(productId, productName);
       
       const productData: Product = {
