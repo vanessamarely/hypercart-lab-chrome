@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { HeroSection } from '@/components/HeroSection';
-import { HeroResourceGuide } from '@/components/HeroResourceGuide';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
 
@@ -12,7 +11,6 @@ import heroVideoMp4 from '@/assets/video/hero-background.mp4';
 
 export function HomePage() {
   const [showLateBanner, setShowLateBanner] = useState(false);
-  const [heroMediaType, setHeroMediaType] = useState<'image' | 'video'>('image');
   const flags = getFlags();
 
   useEffect(() => {
@@ -62,7 +60,7 @@ export function HomePage() {
 
       {/* Hero section */}
       <HeroSection
-        mediaType={heroMediaType}
+        mediaType="video"
         imageSrc={heroJpg}
         videoSrc={heroVideoMp4}
         posterSrc={heroPosterJpg}
@@ -76,30 +74,6 @@ export function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-8">Welcome to HyperCart Lab</h2>
           
-          {/* Hero Media Controls */}
-          <div className="mb-8 p-6 border rounded-lg bg-muted/30">
-            <h3 className="text-lg font-semibold mb-4">Hero Media Options</h3>
-            <div className="flex justify-center gap-4">
-              <Button
-                variant={heroMediaType === 'image' ? 'default' : 'outline'}
-                onClick={() => setHeroMediaType('image')}
-                size="sm"
-              >
-                📸 Image Hero
-              </Button>
-              <Button
-                variant={heroMediaType === 'video' ? 'default' : 'outline'}
-                onClick={() => setHeroMediaType('video')}
-                size="sm"
-              >
-                🎬 Video Hero
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Switch between image and video hero backgrounds to see performance differences
-            </p>
-          </div>
-
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="p-6 border rounded-lg">
               <h3 className="text-xl font-semibold mb-4">LCP Optimization</h3>
@@ -133,8 +107,6 @@ export function HomePage() {
               </p>
             </div>
           </div>
-
-          <HeroResourceGuide className="max-w-2xl mx-auto" />
         </div>
       </section>
     </div>
