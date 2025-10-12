@@ -13,7 +13,7 @@ import {
   addNonPassiveListeners 
 } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getUnsplashImageUrl } from '@/lib/unsplash';
+import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
 import { CartAddedModal } from '@/components/CartAddedModal';
 
 // Product data for different categories
@@ -54,13 +54,14 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
   const flags = getFlags();
 
   useEffect(() => {
-    // Generate product data with Unsplash image
-    const generateProduct = async () => {
+    // Generate product data with local image
+    const generateProduct = () => {
       const category = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'][productId % 5];
       const categoryProducts = PRODUCT_DATA[category as keyof typeof PRODUCT_DATA];
       const productName = categoryProducts[productId % categoryProducts.length];
       
-      const image = await getUnsplashImageUrl(category, productId);
+      const image = getProductImage(productId, true);
+      const imageAlt = getProductImageAlt(productId, productName);
       
       const productData: Product = {
         id: productId,
@@ -71,7 +72,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
         rating: Number((Math.random() * 2 + 3).toFixed(1)),
         inStock: true,
         image,
-        imageAlt: `${productName} - High quality ${category.toLowerCase()} product`
+        imageAlt
       };
       
       setProduct(productData);
@@ -80,79 +81,79 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
 
     addPerformanceMark('product-detail-start');
     
-    generateProduct().then(productData => {
-      // Set up event listeners based on flags
-      const handleTouchMove = (e: TouchEvent) => {
-        if (!flags.listenersPassive) {
-          e.preventDefault(); // This will cause warnings if not passive
-        }
-      };
+    const productData = generateProduct();
+    
+    // Set up event listeners based on flags
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!flags.listenersPassive) {
+        e.preventDefault(); // This will cause warnings if not passive
+      }
+    };
 
-      const handleWheel = (e: WheelEvent) => {
-        // Simulate some processing
-        if (!flags.listenersPassive) {
-          e.preventDefault();
-        }
-      };
+    const handleWheel = (e: WheelEvent) => {
+      // Simulate some processing
+      if (!flags.listenersPassive) {
+        e.preventDefault();
+      }
+    };
 
-      const element = document.body;
+    const element = document.body;
+    
+    if (flags.listenersPassive) {
+      addPassiveListeners(element, ['touchmove', 'wheel'], handleTouchMove as EventListener);
+    } else {
+      addNonPassiveListeners(element, ['touchmove', 'wheel'], handleTouchMove as EventListener);
+    }
+
+    // Format product data using worker or main thread
+    if (flags.useWorker) {
+      const workerManager = new WorkerManager();
+      workerManager.execute('format-product', productData)
+        .then(result => {
+          setFormattedData(result.data);
+        })
+        .catch(error => {
+          console.warn('Worker failed, falling back to main thread:', error);
+          formatProductOnMainThread(productData);
+        });
+    } else {
+      formatProductOnMainThread(productData);
+    }
+
+    function formatProductOnMainThread(prod: Product) {
+      addPerformanceMark('format-start');
       
-      if (flags.listenersPassive) {
-        addPassiveListeners(element, ['touchmove', 'wheel'], handleTouchMove as EventListener);
-      } else {
-        addNonPassiveListeners(element, ['touchmove', 'wheel'], handleTouchMove as EventListener);
+      // Simulate heavy formatting work
+      if (flags.simulateLongTask) {
+        block(120); // Block for 120ms
       }
-
-      // Format product data using worker or main thread
-      if (flags.useWorker) {
-        const workerManager = new WorkerManager();
-        workerManager.execute('format-product', productData)
-          .then(result => {
-            setFormattedData(result.data);
-          })
-          .catch(error => {
-            console.warn('Worker failed, falling back to main thread:', error);
-            formatProductOnMainThread(productData);
-          });
-      } else {
-        formatProductOnMainThread(productData);
-      }
-
-      function formatProductOnMainThread(prod: Product) {
-        addPerformanceMark('format-start');
-        
-        // Simulate heavy formatting work
-        if (flags.simulateLongTask) {
-          block(120); // Block for 120ms
+      
+      const formatted = {
+        ...prod,
+        formattedPrice: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(prod.price),
+        formattedDescription: prod.description,
+        metadata: {
+          processed: new Date().toISOString(),
+          worker: false
         }
-        
-        const formatted = {
-          ...prod,
-          formattedPrice: new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-          }).format(prod.price),
-          formattedDescription: prod.description,
-          metadata: {
-            processed: new Date().toISOString(),
-            worker: false
-          }
-        };
-        
-        setFormattedData(formatted);
-        addPerformanceMark('format-end');
-        measurePerformance('product-format', 'format-start', 'format-end');
-      }
-
-      addPerformanceMark('product-detail-end');
-      measurePerformance('product-detail-load', 'product-detail-start', 'product-detail-end');
-
-      return () => {
-        // Cleanup listeners
-        element.removeEventListener('touchmove', handleTouchMove as EventListener);
-        element.removeEventListener('wheel', handleWheel as EventListener);
       };
-    });
+      
+      setFormattedData(formatted);
+      addPerformanceMark('format-end');
+      measurePerformance('product-format', 'format-start', 'format-end');
+    }
+
+    addPerformanceMark('product-detail-end');
+    measurePerformance('product-detail-load', 'product-detail-start', 'product-detail-end');
+
+    return () => {
+      // Cleanup listeners
+      element.removeEventListener('touchmove', handleTouchMove as EventListener);
+      element.removeEventListener('wheel', handleWheel as EventListener);
+    };
   }, [productId, flags]);
 
   const handleAddToCart = async () => {
@@ -198,7 +199,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
         <div className={`skeleton ${flags.intrinsicPlaceholders ? 'intrinsic' : ''} w-96 h-64`}>
-          Loading product details with Unsplash image...
+          Loading product details...
         </div>
       </div>
     );

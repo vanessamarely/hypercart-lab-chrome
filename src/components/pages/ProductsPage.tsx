@@ -6,7 +6,7 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getUnsplashImageUrl, preloadUnsplashImages } from '@/lib/unsplash';
+import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
 import { CartAddedModal } from '@/components/CartAddedModal';
 import { ShoppingCart } from '@phosphor-icons/react';
 
@@ -58,7 +58,7 @@ const PRODUCT_NAMES = {
 };
 
 // Generate products with better names and descriptions
-const generateProducts = async (): Promise<Product[]> => {
+const generateProducts = (): Product[] => {
   const products: Product[] = [];
   
   for (let i = 0; i < 30; i++) {
@@ -66,8 +66,9 @@ const generateProducts = async (): Promise<Product[]> => {
     const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
     const productName = categoryProducts[i % categoryProducts.length];
     
-    // Get Unsplash image for the category
-    const image = await getUnsplashImageUrl(category, i);
+    // Get local product image
+    const image = getProductImage(i + 1, true);
+    const imageAlt = getProductImageAlt(i + 1, productName);
     
     products.push({
       id: i + 1,
@@ -78,7 +79,7 @@ const generateProducts = async (): Promise<Product[]> => {
       rating: Number((Math.random() * 2 + 3).toFixed(1)),
       inStock: Math.random() > 0.1,
       image,
-      imageAlt: `${productName} - ${category} product`
+      imageAlt
     });
   }
   
@@ -101,17 +102,13 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
   useEffect(() => {
     addPerformanceMark('products-page-start');
     
-    // Preload images for better performance
-    preloadUnsplashImages(['Electronics', 'Clothing', 'Home', 'Sports', 'Books']);
+    // Generate products with local images
+    const generatedProducts = generateProducts();
+    setProducts(generatedProducts);
+    setLoading(false);
     
-    // Generate products with Unsplash images
-    generateProducts().then(generatedProducts => {
-      setProducts(generatedProducts);
-      setLoading(false);
-      
-      addPerformanceMark('products-page-end');
-      measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
-    });
+    addPerformanceMark('products-page-end');
+    measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
     
     // Simulate rendering products
     const renderProducts = () => {
@@ -162,7 +159,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-4">Product Catalog</h1>
             <p className="text-muted-foreground">
-              Loading products with beautiful Unsplash images...
+              Loading products with beautiful high-quality images...
             </p>
           </div>
           <div className="product-grid">
@@ -194,7 +191,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4">Product Catalog</h1>
           <p className="text-muted-foreground">
-            Browse our collection of products featuring high-quality images from Unsplash API.
+            Browse our collection of products featuring beautiful high-quality images.
           </p>
         </div>
 

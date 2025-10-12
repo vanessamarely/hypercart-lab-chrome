@@ -6,7 +6,7 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getUnsplashImageUrl } from '@/lib/unsplash';
+import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
 import { CartAddedModal } from '@/components/CartAddedModal';
 import { ShoppingCart } from '@phosphor-icons/react';
 
@@ -19,8 +19,8 @@ const PRODUCT_NAMES = {
   Books: ['Productivity Guide', 'Writing Manual', 'Photo Book', 'Cookbook', 'Journal', 'Tech Book']
 };
 
-// Generate sample products for search with Unsplash images
-const generateSearchProducts = async (): Promise<Product[]> => {
+// Generate sample products for search with local images
+const generateSearchProducts = (): Product[] => {
   const products: Product[] = [];
   const categories = Object.keys(PRODUCT_NAMES);
   
@@ -28,7 +28,8 @@ const generateSearchProducts = async (): Promise<Product[]> => {
     const category = categories[i % categories.length];
     const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
     const productName = categoryProducts[i % categoryProducts.length];
-    const image = await getUnsplashImageUrl(category, i);
+    const image = getProductImage(i + 1, true);
+    const imageAlt = getProductImageAlt(i + 1, productName);
     
     products.push({
       id: i + 1,
@@ -39,7 +40,7 @@ const generateSearchProducts = async (): Promise<Product[]> => {
       rating: Number((Math.random() * 2 + 3).toFixed(1)),
       inStock: Math.random() > 0.1,
       image,
-      imageAlt: `${productName} - ${category} product`
+      imageAlt
     });
   }
   
@@ -65,10 +66,9 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
 
   useEffect(() => {
     // Generate search products on component mount
-    generateSearchProducts().then(products => {
-      setSearchProducts(products);
-      setLoading(false);
-    });
+    const products = generateSearchProducts();
+    setSearchProducts(products);
+    setLoading(false);
   }, []);
 
   // Simple search function

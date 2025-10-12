@@ -5,6 +5,7 @@ import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPrelo
 
 import heroLarge from '@/assets/images/hero@2x.webp';
 import heroOptimized from '@/assets/images/hero.webp';
+import heroJpg from '@/assets/images/hero.jpg';
 
 export function HomePage() {
   const [showLateBanner, setShowLateBanner] = useState(false);
@@ -115,12 +116,12 @@ export function HomePage() {
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-4">Performance Demo Features</h2>
             <p className="text-muted-foreground mb-6">
-              This demo showcases web performance optimization techniques using real product images from Unsplash.
+              This demo showcases web performance optimization techniques using beautiful product images.
             </p>
             <div className="p-6 border rounded-lg bg-muted/50">
               <p className="text-sm text-muted-foreground">
-                <strong>Image Source:</strong> Product images are fetched from Unsplash API using the access key configured in your .env file. 
-                Add your <code>VITE_UNSPLASH_ACCESS_KEY</code> to the .env file for high-quality images.
+                <strong>Image Optimization:</strong> Product images are optimized for fast loading with WebP format 
+                and appropriate sizing to ensure the best user experience.
               </p>
             </div>
           </div>
