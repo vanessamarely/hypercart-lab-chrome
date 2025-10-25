@@ -6,85 +6,9 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
+import { getAllProducts } from '@/lib/products';
 import { CartAddedModal } from '@/components/CartAddedModal';
 import { ShoppingCart } from '@phosphor-icons/react';
-
-// Product categories for better image matching
-const CATEGORIES = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'];
-
-// Product names that match categories better
-const PRODUCT_NAMES = {
-  Electronics: [
-    'Wireless Bluetooth Headphones',
-    'Smart Fitness Watch',
-    'Portable Phone Charger',
-    'HD Webcam',
-    'Mechanical Keyboard',
-    '4K Action Camera'
-  ],
-  Clothing: [
-    'Premium Cotton T-Shirt',
-    'Denim Jacket',
-    'Running Sneakers',
-    'Casual Summer Dress',
-    'Winter Wool Coat',
-    'Athletic Joggers'
-  ],
-  Home: [
-    'Modern Table Lamp',
-    'Decorative Wall Mirror',
-    'Ceramic Coffee Mug Set',
-    'Bamboo Cutting Board',
-    'Cozy Throw Blanket',
-    'Minimalist Wall Clock'
-  ],
-  Sports: [
-    'Yoga Mat Pro',
-    'Resistance Band Set',
-    'Water Bottle Steel',
-    'Foam Roller',
-    'Workout Gloves',
-    'Jump Rope'
-  ],
-  Books: [
-    'Productivity Handbook',
-    'Creative Writing Guide',
-    'Photography Masterclass',
-    'Cooking Essentials',
-    'Mindfulness Journal',
-    'Tech Innovation Book'
-  ]
-};
-
-// Generate products with better names and descriptions
-const generateProducts = (): Product[] => {
-  const products: Product[] = [];
-  
-  for (let i = 0; i < 30; i++) {
-    const category = CATEGORIES[i % 5];
-    const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
-    const productName = categoryProducts[i % categoryProducts.length];
-    
-    // Get local product image
-    const image = getProductImage(i + 1);
-    const imageAlt = getProductImageAlt(i + 1, productName);
-    
-    products.push({
-      id: i + 1,
-      name: productName,
-      description: `High-quality ${category.toLowerCase()} product with excellent features and reliable performance. Perfect for everyday use.`,
-      price: Math.floor(Math.random() * 500) + 20,
-      category,
-      rating: Number((Math.random() * 2 + 3).toFixed(1)),
-      inStock: Math.random() > 0.1,
-      image,
-      imageAlt
-    });
-  }
-  
-  return products;
-};
 
 interface ProductsPageProps {
   onProductClick: (productId: number) => void;
@@ -102,24 +26,20 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
   useEffect(() => {
     addPerformanceMark('products-page-start');
     
-    // Generate products with local images
-    const generatedProducts = generateProducts();
-    setProducts(generatedProducts);
+    const allProducts = getAllProducts();
+    setProducts(allProducts);
     setLoading(false);
     
     addPerformanceMark('products-page-end');
     measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
     
-    // Simulate rendering products
     const renderProducts = () => {
       addPerformanceMark('render-products-start');
-      // Force layout calculation
       document.querySelector('.product-grid')?.getBoundingClientRect();
       addPerformanceMark('render-products-end');
       measurePerformance('render-products', 'render-products-start', 'render-products-end');
     };
 
-    // Use setTimeout to simulate async rendering
     setTimeout(renderProducts, 100);
   }, []);
 

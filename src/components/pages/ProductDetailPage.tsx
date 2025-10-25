@@ -13,32 +13,8 @@ import {
   addNonPassiveListeners 
 } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
+import { getProductById, getProductDetailDescription } from '@/lib/products';
 import { CartAddedModal } from '@/components/CartAddedModal';
-
-// Product data for different categories
-const PRODUCT_DATA = {
-  Electronics: [
-    'Wireless Bluetooth Headphones', 'Smart Fitness Watch', 'Portable Phone Charger',
-    'HD Webcam', 'Mechanical Keyboard', '4K Action Camera'
-  ],
-  Clothing: [
-    'Premium Cotton T-Shirt', 'Denim Jacket', 'Running Sneakers',
-    'Casual Summer Dress', 'Winter Wool Coat', 'Athletic Joggers'
-  ],
-  Home: [
-    'Modern Table Lamp', 'Decorative Wall Mirror', 'Ceramic Coffee Mug Set',
-    'Bamboo Cutting Board', 'Cozy Throw Blanket', 'Minimalist Wall Clock'
-  ],
-  Sports: [
-    'Yoga Mat Pro', 'Resistance Band Set', 'Water Bottle Steel',
-    'Foam Roller', 'Workout Gloves', 'Jump Rope'
-  ],
-  Books: [
-    'Productivity Handbook', 'Creative Writing Guide', 'Photography Masterclass',
-    'Cooking Essentials', 'Mindfulness Journal', 'Tech Innovation Book'
-  ]
-};
 
 interface ProductDetailPageProps {
   productId: number;
@@ -54,44 +30,30 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
   const flags = getFlags();
 
   useEffect(() => {
-    // Generate product data with local image
-    const generateProduct = () => {
-      const category = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'][productId % 5];
-      const categoryProducts = PRODUCT_DATA[category as keyof typeof PRODUCT_DATA];
-      const productName = categoryProducts[productId % categoryProducts.length];
-      
-      const image = getProductImage(productId);
-      const imageAlt = getProductImageAlt(productId, productName);
-      
-      const productData: Product = {
-        id: productId,
-        name: productName,
-        description: `This is a detailed description of ${productName}. It features excellent build quality, innovative design, and outstanding performance. Perfect for both professional and personal use, this product represents the pinnacle of modern engineering and craftsmanship. Made with premium materials and attention to detail.`,
-        price: Math.floor(Math.random() * 500) + 50,
-        category,
-        rating: Number((Math.random() * 2 + 3).toFixed(1)),
-        inStock: true,
-        image,
-        imageAlt
-      };
-      
-      setProduct(productData);
-      return productData;
-    };
-
     addPerformanceMark('product-detail-start');
     
-    const productData = generateProduct();
+    const productData = getProductById(productId);
     
-    // Set up event listeners based on flags
+    if (!productData) {
+      console.error(`Product with ID ${productId} not found`);
+      onNavigate('products');
+      return;
+    }
+    
+    const detailedProduct = {
+      ...productData,
+      description: getProductDetailDescription(productData)
+    };
+    
+    setProduct(detailedProduct);
+    
     const handleTouchMove = (e: TouchEvent) => {
       if (!flags.listenersPassive) {
-        e.preventDefault(); // This will cause warnings if not passive
+        e.preventDefault();
       }
     };
 
     const handleWheel = (e: WheelEvent) => {
-      // Simulate some processing
       if (!flags.listenersPassive) {
         e.preventDefault();
       }
@@ -105,27 +67,25 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       addNonPassiveListeners(element, ['touchmove', 'wheel'], handleTouchMove as EventListener);
     }
 
-    // Format product data using worker or main thread
     if (flags.useWorker) {
       const workerManager = new WorkerManager();
-      workerManager.execute('format-product', productData)
+      workerManager.execute('format-product', detailedProduct)
         .then(result => {
           setFormattedData(result.data);
         })
         .catch(error => {
           console.warn('Worker failed, falling back to main thread:', error);
-          formatProductOnMainThread(productData);
+          formatProductOnMainThread(detailedProduct);
         });
     } else {
-      formatProductOnMainThread(productData);
+      formatProductOnMainThread(detailedProduct);
     }
 
     function formatProductOnMainThread(prod: Product) {
       addPerformanceMark('format-start');
       
-      // Simulate heavy formatting work
       if (flags.simulateLongTask) {
-        block(120); // Block for 120ms
+        block(120);
       }
       
       const formatted = {
@@ -150,11 +110,10 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
     measurePerformance('product-detail-load', 'product-detail-start', 'product-detail-end');
 
     return () => {
-      // Cleanup listeners
       element.removeEventListener('touchmove', handleTouchMove as EventListener);
       element.removeEventListener('wheel', handleWheel as EventListener);
     };
-  }, [productId, flags]);
+  }, [productId, flags, onNavigate]);
 
   const handleAddToCart = async () => {
     if (!product) return;

@@ -6,46 +6,9 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
-import { getProductImage, getProductImageAlt } from '@/lib/local-assets';
+import { getAllProducts, searchProducts as searchProductsFromLib } from '@/lib/products';
 import { CartAddedModal } from '@/components/CartAddedModal';
 import { ShoppingCart } from '@phosphor-icons/react';
-
-// Product data for search
-const PRODUCT_NAMES = {
-  Electronics: ['Wireless Headphones', 'Smart Watch', 'Phone Charger', 'HD Webcam', 'Keyboard', 'Action Camera'],
-  Clothing: ['Cotton T-Shirt', 'Denim Jacket', 'Running Shoes', 'Summer Dress', 'Wool Coat', 'Joggers'],
-  Home: ['Table Lamp', 'Wall Mirror', 'Coffee Mug Set', 'Cutting Board', 'Throw Blanket', 'Wall Clock'],
-  Sports: ['Yoga Mat', 'Resistance Bands', 'Water Bottle', 'Foam Roller', 'Workout Gloves', 'Jump Rope'],
-  Books: ['Productivity Guide', 'Writing Manual', 'Photo Book', 'Cookbook', 'Journal', 'Tech Book']
-};
-
-// Generate sample products for search with local images
-const generateSearchProducts = (): Product[] => {
-  const products: Product[] = [];
-  const categories = Object.keys(PRODUCT_NAMES);
-  
-  for (let i = 0; i < 50; i++) {
-    const category = categories[i % categories.length];
-    const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
-    const productName = categoryProducts[i % categoryProducts.length];
-    const image = getProductImage(i + 1);
-    const imageAlt = getProductImageAlt(i + 1, productName);
-    
-    products.push({
-      id: i + 1,
-      name: `${['Premium', 'Deluxe', 'Essential', 'Pro', 'Classic'][i % 5]} ${productName}`,
-      description: `High-quality ${category.toLowerCase()} item with excellent features and modern design.`,
-      price: Math.floor(Math.random() * 500) + 10,
-      category,
-      rating: Number((Math.random() * 2 + 3).toFixed(1)),
-      inStock: Math.random() > 0.1,
-      image,
-      imageAlt
-    });
-  }
-  
-  return products;
-};
 
 interface SearchPageProps {
   onProductClick: (productId: number) => void;
@@ -65,8 +28,7 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
   const flags = getFlags();
 
   useEffect(() => {
-    // Generate search products on component mount
-    const products = generateSearchProducts();
+    const products = getAllProducts();
     setSearchProducts(products);
     setLoading(false);
   }, []);
@@ -163,28 +125,28 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
     
     addPerformanceMark('add-to-cart-start');
 
-    // Add to cart
-    const currentCart = cart || [];
-    const existingItem = currentCart.find(item => item.product.id === product.id);
-    
-    if (existingItem) {
-      setCart(prev => 
-        (prev || []).map(item => 
+    setCart((currentCart) => {
+      const cartArray = currentCart || [];
+      const existingItem = cartArray.find(item => item.product.id === product.id);
+      
+      if (existingItem) {
+        return cartArray.map(item => 
           item.product.id === product.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
-        )
-      );
-    } else {
-      setCart(prev => [...(prev || []), { product, quantity: 1 }]);
-    }
+        );
+      } else {
+        return [...cartArray, { product, quantity: 1 }];
+      }
+    });
 
     addPerformanceMark('add-to-cart-end');
     measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
     
-    // Show the modal
-    setAddedProduct(product);
-    setShowCartModal(true);
+    setTimeout(() => {
+      setAddedProduct(product);
+      setShowCartModal(true);
+    }, 100);
   };
 
   const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
