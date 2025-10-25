@@ -215,7 +215,7 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-primary">
-                        ${product.price}
+                        ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                       </span>
                       <div className="flex items-center space-x-4">
                         <span className="text-sm">⭐ {product.rating}</span>

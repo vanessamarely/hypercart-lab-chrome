@@ -251,7 +251,7 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
                       <div className="flex-1">
                         <h4 className="font-medium">{item.product.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          ${item.product.price} × {item.quantity}
+                          ${typeof item.product.price === 'number' ? item.product.price.toFixed(2) : item.product.price} × {item.quantity}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">

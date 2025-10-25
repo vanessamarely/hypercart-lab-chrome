@@ -153,7 +153,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-2xl font-bold text-primary">
-                      ${product.price}
+                      ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                     </span>
                     <div className="flex items-center mt-1">
                       <span className="text-sm text-muted-foreground">

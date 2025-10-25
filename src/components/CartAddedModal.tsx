@@ -50,7 +50,7 @@ export function CartAddedModal({
                 {product.category}
               </Badge>
               <p className="text-lg font-semibold text-primary">
-                ${product.price}
+                ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
               </p>
             </div>
           </div>
