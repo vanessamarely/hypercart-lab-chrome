@@ -128,28 +128,30 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
     
     addPerformanceMark('add-to-cart-start');
 
-    // Add to cart
-    const currentCart = cart || [];
-    const existingItem = currentCart.find(item => item.product.id === product.id);
-    
-    if (existingItem) {
-      setCart(prev => 
-        (prev || []).map(item => 
+    // Add to cart using functional update
+    setCart((currentCart) => {
+      const cartArray = currentCart || [];
+      const existingItem = cartArray.find(item => item.product.id === product.id);
+      
+      if (existingItem) {
+        return cartArray.map(item => 
           item.product.id === product.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
-        )
-      );
-    } else {
-      setCart(prev => [...(prev || []), { product, quantity: 1 }]);
-    }
+        );
+      } else {
+        return [...cartArray, { product, quantity: 1 }];
+      }
+    });
 
     addPerformanceMark('add-to-cart-end');
     measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
     
-    // Show the modal
-    setAddedProduct(product);
-    setShowCartModal(true);
+    // Show the modal after a brief delay to ensure cart state is updated
+    setTimeout(() => {
+      setAddedProduct(product);
+      setShowCartModal(true);
+    }, 100);
   };
 
   if (loading) {
