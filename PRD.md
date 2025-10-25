@@ -12,6 +12,13 @@ Multiple routes with focused performance scenarios, persistent debugging state, 
 
 ## Essential Features
 
+**Performance Dashboard**
+- Functionality: Real-time Core Web Vitals monitoring dashboard with interactive metrics display
+- Purpose: Live visualization of performance metrics during presentations and development
+- Trigger: Click floating chart button on bottom right
+- Progression: Click dashboard button → View Core Web Vitals → Switch between tabs (Vitals/Resources/Navigation/Tasks) → Monitor real-time changes
+- Success criteria: Accurate real-time reporting of LCP, FID, CLS, INP, FCP, and TTFB with color-coded ratings
+
 **Debug Panel System**
 - Functionality: Floating gear button reveals comprehensive toggle panel
 - Purpose: Live control of performance issues during presentations

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigation } from './components/Navigation';
 import { DebugToggleButton } from './components/DebugPanel';
 import { StatusBar } from './components/StatusBar';
+import { PerformanceDashboardButton } from './components/PerformanceDashboard';
 import { HomePage } from './components/pages/HomePage';
 import { ProductsPage } from './components/pages/ProductsPage';
 import { ProductDetailPage } from './components/pages/ProductDetailPage';
@@ -63,6 +64,7 @@ function App() {
         {renderCurrentPage()}
       </main>
 
+      <PerformanceDashboardButton />
       <DebugToggleButton />
       <StatusBar />
     </div>
