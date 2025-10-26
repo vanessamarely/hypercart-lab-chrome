@@ -122,12 +122,10 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
     setIsLoading(true);
 
     try {
-      // Simulate long task if flag is enabled
       if (flags.simulateLongTask) {
         block(120);
       }
 
-      // Add to cart using functional update
       setCart((currentCart) => {
         const cartArray = currentCart || [];
         const existingItem = cartArray.find(item => item.product.id === product.id);
@@ -146,10 +144,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       addPerformanceMark('add-to-cart-end');
       measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
       
-      // Show the modal after a brief delay to ensure cart state is updated
-      setTimeout(() => {
-        setShowCartModal(true);
-      }, 100);
+      setShowCartModal(true);
       
     } finally {
       setIsLoading(false);
@@ -166,8 +161,6 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
     );
   }
 
-  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
-
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-6xl mx-auto">
@@ -180,7 +173,6 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
         </Button>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Product Gallery */}
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg border">
               <img
@@ -192,7 +184,6 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
               />
             </div>
             
-            {/* Thumbnail gallery */}
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 4 }, (_, i) => (
                 <div key={i} className="aspect-square border rounded overflow-hidden">
@@ -206,7 +197,6 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
             </div>
           </div>
 
-          {/* Product Info */}
           <div className="space-y-6">
             <div>
               <Badge className="mb-2">{product.category}</Badge>
@@ -278,7 +268,6 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={product}
-          totalCartItems={totalCartItems}
           onContinueShopping={() => {
             setShowCartModal(false);
             onNavigate('products');

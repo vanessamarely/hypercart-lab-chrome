@@ -43,12 +43,13 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
     setTimeout(renderProducts, 100);
   }, []);
 
-  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+  const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
     
     addPerformanceMark('add-to-cart-start');
 
-    // Add to cart using functional update
+    setAddedProduct(product);
+
     setCart((currentCart) => {
       const cartArray = currentCart || [];
       const existingItem = cartArray.find(item => item.product.id === product.id);
@@ -67,11 +68,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
     addPerformanceMark('add-to-cart-end');
     measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
     
-    // Show the modal after a brief delay to ensure cart state is updated
-    setTimeout(() => {
-      setAddedProduct(product);
-      setShowCartModal(true);
-    }, 100);
+    setShowCartModal(true);
   };
 
   if (loading) {
@@ -104,8 +101,6 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
       </div>
     );
   }
-
-  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen p-4">
@@ -193,7 +188,6 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={addedProduct}
-          totalCartItems={totalCartItems}
           onContinueShopping={() => setShowCartModal(false)}
           onViewCart={() => {
             setShowCartModal(false);

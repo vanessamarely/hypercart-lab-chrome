@@ -3,13 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ShoppingCart } from '@phosphor-icons/react';
-import { Product } from '@/lib/types';
+import { Product, CartItem } from '@/lib/types';
+import { useKV } from '@github/spark/hooks';
 
 interface CartAddedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product | null;
-  totalCartItems: number;
   onContinueShopping: () => void;
   onViewCart: () => void;
 }
@@ -18,10 +18,13 @@ export function CartAddedModal({
   open, 
   onOpenChange, 
   product, 
-  totalCartItems,
   onContinueShopping,
   onViewCart 
 }: CartAddedModalProps) {
+  const [cart] = useKV<CartItem[]>('hypercart-cart', []);
+  
+  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
+
   return (
     <Dialog open={open && !!product} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

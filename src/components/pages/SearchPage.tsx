@@ -120,10 +120,12 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
     };
   }, [debounceTimer]);
 
-  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+  const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
     
     addPerformanceMark('add-to-cart-start');
+
+    setAddedProduct(product);
 
     setCart((currentCart) => {
       const cartArray = currentCart || [];
@@ -143,13 +145,8 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
     addPerformanceMark('add-to-cart-end');
     measurePerformance('add-to-cart-interaction', 'add-to-cart-start', 'add-to-cart-end');
     
-    setTimeout(() => {
-      setAddedProduct(product);
-      setShowCartModal(true);
-    }, 100);
+    setShowCartModal(true);
   };
-
-  const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
 
   return (
     <div className="min-h-screen p-4">
@@ -261,7 +258,6 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={addedProduct}
-          totalCartItems={totalCartItems}
           onContinueShopping={() => setShowCartModal(false)}
           onViewCart={() => {
             setShowCartModal(false);
