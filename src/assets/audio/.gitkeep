@@ -1,0 +1,9 @@
+# Audio Assets Directory
+
+Place audio files (.mp3, .wav, .ogg) here and import them in your components:
+
+```typescript
+import buttonClick from '@/assets/audio/button-click.mp3'
+
+<audio src={buttonClick} />
+```

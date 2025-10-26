@@ -1,0 +1,9 @@
+# Documents Assets Directory
+
+Place document files (.pdf, .docx, etc.) here and import them in your components:
+
+```typescript
+import userGuide from '@/assets/documents/user-guide.pdf'
+
+<a href={userGuide} download>Download Guide</a>
+```

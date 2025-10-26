@@ -10,6 +10,12 @@ import { SearchPage } from './components/pages/SearchPage';
 import { CheckoutPage } from './components/pages/CheckoutPage';
 import { Toaster } from 'sonner';
 
+if (import.meta.env.DEV) {
+  import('./lib/asset-verification').then(({ verifyAssets }) => {
+    verifyAssets();
+  });
+}
+
 type Page = 'home' | 'products' | 'search' | 'checkout' | 'product-detail';
 
 function App() {

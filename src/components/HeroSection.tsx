@@ -28,11 +28,13 @@ export function HeroMedia({
     onLoad?.();
   };
 
-  const handleError = () => {
+  const handleError = (e: any) => {
+    console.warn('Media failed to load:', src, e);
     setMediaError(true);
+    onLoad?.();
   };
 
-  if (type === 'video' && !mediaError) {
+  if (type === 'video' && !mediaError && src) {
     return (
       <video
         src={src}
@@ -51,9 +53,11 @@ export function HeroMedia({
     );
   }
 
+  const fallbackSrc = (type === 'video' && mediaError) ? (poster || src) : src;
+  
   return (
     <img
-      src={type === 'video' && mediaError ? poster || src : src}
+      src={fallbackSrc}
       alt={alt}
       className={`w-full h-full object-cover ${className}`}
       fetchPriority={fetchPriority}
