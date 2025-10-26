@@ -18,7 +18,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   useEffect(() => {
     addPerformanceMark('home-page-start');
 
-    // Handle hero preload - prefer image for better performance
+    // Handle hero preload - use poster image for video
     const heroSrc = heroJpg;
     
     if (flags.heroPreload) {
@@ -62,7 +62,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
       {/* Hero section */}
       <HeroSection
-        mediaType="image"
+        mediaType="video"
         imageSrc={heroJpg}
         videoSrc={heroVideoMp4}
         posterSrc={heroJpg}
