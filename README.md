@@ -50,32 +50,6 @@ VITE_UNSPLASH_ACCESS_KEY=your_actual_access_key_here
 - **Production**: Add `?debug=1` to URL to show debug panel
 - **Toggle Count**: Badge shows number of active performance flags
 
-## Performance Dashboard
-
-The app includes a **real-time Core Web Vitals Dashboard** accessible via the floating chart button (always visible, positioned below the debug panel gear icon).
-
-**Features**:
-- **Core Web Vitals**: Live tracking of LCP, FID, CLS, and INP with color-coded ratings (good/needs-improvement/poor)
-- **Additional Metrics**: FCP (First Contentful Paint) and TTFB (Time to First Byte)
-- **Resource Timing**: Top 20 slowest resources by load time with size and duration
-- **Navigation Timing**: Detailed breakdown of DNS, TCP, request/response phases
-- **Long Tasks**: Detection and reporting of tasks blocking main thread >50ms
-
-**Rating Thresholds**:
-- **LCP**: Good <2.5s, Poor >4s
-- **FID**: Good <100ms, Poor >300ms
-- **CLS**: Good <0.1, Poor >0.25
-- **INP**: Good <200ms, Poor >500ms
-- **FCP**: Good <1.8s, Poor >3s
-- **TTFB**: Good <800ms, Poor >1.8s
-
-**Usage During Presentations**:
-1. Open Performance Dashboard to show baseline metrics
-2. Toggle performance flags in Debug Panel
-3. Watch metrics update in real-time
-4. Switch between tabs to show detailed resource/timing analysis
-5. Use color-coded ratings to quickly communicate performance health
-
 ## Routes & Performance Labs
 
 ### 🏠 Home Page (`/`) - LCP/CLS Lab

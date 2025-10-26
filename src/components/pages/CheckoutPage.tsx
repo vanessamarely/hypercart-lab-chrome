@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Trash } from '@phosphor-icons/react';
 import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
@@ -77,6 +78,13 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
             : item
         );
       }
+    });
+  };
+
+  const removeItem = (productId: number) => {
+    setCart((currentCart) => {
+      const cartArray = currentCart || [];
+      return cartArray.filter(item => item.product.id !== productId);
     });
   };
 
@@ -269,6 +277,15 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                         >
                           +
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeItem(item.product.id)}
+                          data-cy="remove-item"
+                          title="Remove from cart"
+                        >
+                          <Trash size={16} />
                         </Button>
                       </div>
                     </div>
