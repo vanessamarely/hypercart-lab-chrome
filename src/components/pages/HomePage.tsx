@@ -5,8 +5,6 @@ import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, addHeroPreload, removeHeroPreload } from '@/lib/performance-utils';
 
 import heroJpg from '@/assets/images/hero.jpg';
-import heroAltJpg from '@/assets/images/hero-alt.jpg';
-import heroPosterJpg from '@/assets/images/hero-poster.jpg';
 import heroVideoMp4 from '@/assets/video/hero-background.mp4';
 
 interface HomePageProps {
@@ -67,7 +65,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         mediaType="image"
         imageSrc={heroJpg}
         videoSrc={heroVideoMp4}
-        posterSrc={heroPosterJpg}
+        posterSrc={heroJpg}
         fetchPriority={flags.heroFetchPriorityHigh ? 'high' : 'auto'}
         reserveSpace={flags.reserveHeroSpace}
         onMediaLoad={handleHeroMediaLoad}
