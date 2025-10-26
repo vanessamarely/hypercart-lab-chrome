@@ -64,7 +64,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
       {/* Hero section */}
       <HeroSection
-        mediaType="image"
+        mediaType="video"
         imageSrc={heroJpg}
         videoSrc={heroVideoMp4}
         posterSrc={heroPosterJpg}
