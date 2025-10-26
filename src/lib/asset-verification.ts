@@ -1,6 +1,4 @@
 import heroJpg from '@/assets/images/hero.jpg';
-import heroAltJpg from '@/assets/images/hero-alt.jpg';
-import heroPosterJpg from '@/assets/images/hero-poster.jpg';
 import heroWebp from '@/assets/images/hero.webp';
 import hero2xWebp from '@/assets/images/hero@2x.webp';
 import heroVideoMp4 from '@/assets/video/hero-background.mp4';
@@ -23,8 +21,6 @@ import product6Jpg from '@/assets/images/product-6.jpg';
 export const ALL_ASSETS = {
   hero: {
     jpg: heroJpg,
-    altJpg: heroAltJpg,
-    posterJpg: heroPosterJpg,
     webp: heroWebp,
     webp2x: hero2xWebp,
     videoMp4: heroVideoMp4,
