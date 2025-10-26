@@ -119,7 +119,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
       element.removeEventListener('touchmove', handleTouchMove as EventListener);
       element.removeEventListener('wheel', handleWheel as EventListener);
     };
-  }, [productId, flags, onNavigate]);
+  }, [productId, flags]);
 
   const handleAddToCart = async () => {
     if (!product) return;
