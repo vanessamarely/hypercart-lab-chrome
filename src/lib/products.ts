@@ -1,5 +1,4 @@
 import { Product } from './types';
-import { getProductImage, getProductImageAlt } from './local-assets';
 
 const CATEGORIES = ['Electronics', 'Clothing', 'Home', 'Sports', 'Books'];
 
@@ -84,9 +83,6 @@ export function getAllProducts(): Product[] {
     const categoryProducts = PRODUCT_NAMES[category as keyof typeof PRODUCT_NAMES];
     const productName = categoryProducts[i % categoryProducts.length];
     
-    const image = getProductImage(i + 1);
-    const imageAlt = getProductImageAlt(i + 1, productName);
-    
     products.push({
       id: i + 1,
       name: productName,
@@ -95,8 +91,8 @@ export function getAllProducts(): Product[] {
       category,
       rating: FIXED_RATINGS[i],
       inStock: IN_STOCK_STATUS[i],
-      image,
-      imageAlt
+      image: '',
+      imageAlt: `${productName} - Product ${i + 1}`
     });
   }
   

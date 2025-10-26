@@ -14,6 +14,7 @@ import {
 } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
 import { getProductById, getProductDetailDescription } from '@/lib/products';
+import { getUnsplashImageForProduct } from '@/lib/unsplash';
 import { CartAddedModal } from '@/components/CartAddedModal';
 
 interface ProductDetailPageProps {
@@ -27,6 +28,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
   const [formattedData, setFormattedData] = useState<any>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [showCartModal, setShowCartModal] = useState(false);
+  const [productImage, setProductImage] = useState<string>('');
   const flags = getFlags();
 
   useEffect(() => {
@@ -46,6 +48,10 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
     };
     
     setProduct(detailedProduct);
+    
+    getUnsplashImageForProduct(productId, productData.category, productData.name).then(imageUrl => {
+      setProductImage(imageUrl);
+    });
     
     const handleTouchMove = (e: TouchEvent) => {
       if (!flags.listenersPassive) {
@@ -176,7 +182,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg border">
               <img
-                src={product.image}
+                src={productImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop'}
                 alt={product.imageAlt || product.name}
                 className={`w-full h-full object-cover ${flags.missingSizes ? 'no-dimensions' : ''}`}
                 style={!flags.missingSizes ? { width: '100%', height: '100%' } : undefined}
@@ -188,7 +194,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
               {Array.from({ length: 4 }, (_, i) => (
                 <div key={i} className="aspect-square border rounded overflow-hidden">
                   <img
-                    src={product.image}
+                    src={productImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop'}
                     alt={`${product.name} view ${i + 1}`}
                     className="w-full h-full object-cover"
                   />

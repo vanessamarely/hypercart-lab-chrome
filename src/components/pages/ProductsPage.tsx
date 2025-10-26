@@ -7,6 +7,7 @@ import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';
 import { getAllProducts } from '@/lib/products';
+import { getUnsplashImageForProduct } from '@/lib/unsplash';
 import { CartAddedModal } from '@/components/CartAddedModal';
 import { ShoppingCart } from '@phosphor-icons/react';
 
@@ -21,17 +22,31 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
   const [loading, setLoading] = useState(true);
   const [showCartModal, setShowCartModal] = useState(false);
   const [addedProduct, setAddedProduct] = useState<Product | null>(null);
+  const [productImages, setProductImages] = useState<Map<number, string>>(new Map());
   const flags = getFlags();
 
   useEffect(() => {
     addPerformanceMark('products-page-start');
     
-    const allProducts = getAllProducts();
-    setProducts(allProducts);
-    setLoading(false);
+    const loadProductsWithImages = async () => {
+      const allProducts = getAllProducts();
+      setProducts(allProducts);
+      
+      const imageMap = new Map<number, string>();
+      
+      for (const product of allProducts) {
+        const imageUrl = await getUnsplashImageForProduct(product.id, product.category, product.name);
+        imageMap.set(product.id, imageUrl);
+        setProductImages(new Map(imageMap));
+      }
+      
+      setLoading(false);
+      
+      addPerformanceMark('products-page-end');
+      measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
+    };
     
-    addPerformanceMark('products-page-end');
-    measurePerformance('products-page-load', 'products-page-start', 'products-page-end');
+    loadProductsWithImages();
     
     const renderProducts = () => {
       addPerformanceMark('render-products-start');
@@ -122,7 +137,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
             >
               <div className="relative overflow-hidden">
                 <img
-                  src={product.image}
+                  src={productImages.get(product.id) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop'}
                   alt={product.imageAlt || product.name}
                   className={`product-image object-cover transition-transform hover:scale-105 ${flags.missingSizes ? 'no-dimensions' : ''}`}
                   loading={flags.lazyOff ? 'eager' : 'lazy'}
