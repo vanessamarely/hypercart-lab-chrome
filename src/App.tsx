@@ -36,7 +36,7 @@ function App() {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage />;
+        return <HomePage onNavigate={handleNavigation} />;
       case 'products':
         return <ProductsPage onProductClick={handleProductClick} onNavigate={handleNavigation} />;
       case 'product-detail':

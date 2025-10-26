@@ -9,7 +9,11 @@ import heroAltJpg from '@/assets/images/hero-alt.jpg';
 import heroPosterJpg from '@/assets/images/hero-poster.jpg';
 import heroVideoMp4 from '@/assets/video/hero-background.mp4';
 
-export function HomePage() {
+interface HomePageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function HomePage({ onNavigate }: HomePageProps) {
   const [showLateBanner, setShowLateBanner] = useState(false);
   const flags = getFlags();
 
@@ -67,6 +71,7 @@ export function HomePage() {
         fetchPriority={flags.heroFetchPriorityHigh ? 'high' : 'auto'}
         reserveSpace={flags.reserveHeroSpace}
         onMediaLoad={handleHeroMediaLoad}
+        onCtaClick={() => onNavigate?.('products')}
       />
 
       {/* Performance Loop Introduction */}
