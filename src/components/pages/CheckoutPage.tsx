@@ -9,6 +9,7 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { CartItem } from '@/lib/types';
+import { toast } from 'sonner';
 
 interface CheckoutPageProps {
   onNavigate: (page: string) => void;
@@ -84,6 +85,15 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
   const removeItem = (productId: number) => {
     setCart((currentCart) => {
       const cartArray = currentCart || [];
+      const itemToRemove = cartArray.find(item => item.product.id === productId);
+      
+      if (itemToRemove) {
+        toast.success(`${itemToRemove.product.name} removed from cart`, {
+          description: `${itemToRemove.quantity} item${itemToRemove.quantity > 1 ? 's' : ''} removed`,
+          duration: 3000,
+        });
+      }
+      
       return cartArray.filter(item => item.product.id !== productId);
     });
   };

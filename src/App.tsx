@@ -8,6 +8,7 @@ import { ProductsPage } from './components/pages/ProductsPage';
 import { ProductDetailPage } from './components/pages/ProductDetailPage';
 import { SearchPage } from './components/pages/SearchPage';
 import { CheckoutPage } from './components/pages/CheckoutPage';
+import { Toaster } from 'sonner';
 
 type Page = 'home' | 'products' | 'search' | 'checkout' | 'product-detail';
 
@@ -64,6 +65,7 @@ function App() {
         {renderCurrentPage()}
       </main>
 
+      <Toaster position="bottom-right" richColors />
       <PerformanceDashboardButton />
       <DebugToggleButton />
       <StatusBar />
