@@ -258,6 +258,7 @@ export function SearchPage({ onProductClick, onNavigate }: SearchPageProps) {
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={addedProduct}
+          onContinueShopping={() => setShowCartModal(false)}
           onViewCart={() => {
             setShowCartModal(false);
             onNavigate?.('checkout');

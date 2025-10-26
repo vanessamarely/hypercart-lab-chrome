@@ -93,40 +93,22 @@ export function HeroSection({
 }: HeroSectionProps) {
   const mediaSrc = mediaType === 'video' ? videoSrc : imageSrc;
 
-  if (!mediaSrc) {
-    return (
-      <section className={`hero-container ${reserveSpace ? 'reserved-space' : ''} bg-muted`}>
-        <div className="relative w-full h-full flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold mb-4 text-foreground">{title}</h1>
-            <p className="text-xl mb-8 text-muted-foreground">{subtitle}</p>
-            <Button 
-              size="lg" 
-              className="bg-accent hover:bg-accent/90"
-              onClick={onCtaClick}
-            >
-              {ctaText}
-            </Button>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section 
       className={`hero-container ${reserveSpace ? 'reserved-space' : ''}`}
       data-cy="hero-section"
     >
       <div className="relative w-full h-full">
-        <HeroMedia
-          type={mediaType}
-          src={mediaSrc}
-          alt="Hero background"
-          fetchPriority={fetchPriority}
-          onLoad={onMediaLoad}
-          poster={posterSrc}
-        />
+        {mediaSrc && (
+          <HeroMedia
+            type={mediaType}
+            src={mediaSrc}
+            alt="Hero background"
+            fetchPriority={fetchPriority}
+            onLoad={onMediaLoad}
+            poster={posterSrc}
+          />
+        )}
         
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="text-center text-white px-4">
