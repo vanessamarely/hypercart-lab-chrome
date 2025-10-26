@@ -60,7 +60,7 @@ export function HomePage() {
 
       {/* Hero section */}
       <HeroSection
-        mediaType="video"
+        mediaType="image"
         imageSrc={heroJpg}
         videoSrc={heroVideoMp4}
         posterSrc={heroPosterJpg}
