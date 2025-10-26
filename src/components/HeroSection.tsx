@@ -93,12 +93,12 @@ export function HeroSection({
 }: HeroSectionProps) {
   const mediaSrc = mediaType === 'video' ? videoSrc : imageSrc;
 
-  return (
-    <section 
-      className={`hero-container ${reserveSpace ? 'reserved-space' : ''}`}
-      data-cy="hero-section"
-    >
-      <div className="relative w-full h-full">
+            <p className="text-xl mb-8">{subtitle}</p>
+            <Button 
+              size="lg" 
+              className="bg-accent hover:bg-accent/90"
+              onClick={onCtaClick}
+              data-cy="shop-now-cta"
         {mediaSrc && (
           <HeroMedia
             type={mediaType}
@@ -109,22 +109,3 @@ export function HeroSection({
             poster={posterSrc}
           />
         )}
-        
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-5xl font-bold mb-4">{title}</h1>
-            <p className="text-xl mb-8">{subtitle}</p>
-            <Button 
-              size="lg" 
-              className="bg-accent hover:bg-accent/90"
-              onClick={onCtaClick}
-              data-cy="shop-now-cta"
-            >
-              {ctaText}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
