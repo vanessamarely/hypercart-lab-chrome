@@ -6,11 +6,11 @@
     "scripts": {
         "dev": "vite",
         "kill": "fuser -k 5000/tcp",
-        "build": "tsc -b --noCheck && vite build",
+        "build": "tsc -b && vite build",
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview",
-        "clean": "rm -rf node_modules/.vite"
+        "clean": "rm -rf node_modules/.vite && rm -rf node_modules/.cache"
     },
     "dependencies": {
         "@github/spark": "^0.0.1",

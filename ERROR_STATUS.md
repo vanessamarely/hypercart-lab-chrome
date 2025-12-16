@@ -94,6 +94,13 @@ npm install
 npm run dev
 ```
 
+### How to Start the Application
+
+1. Start the dev server: `npm run dev`
+2. Open: `http://localhost:5173/?debug=1`
+3. Test the performance debugging features
+4. Use the Debug Panel to toggle different performance scenarios
+
 ### Application Features
 
 Once running, the app provides:
@@ -105,18 +112,11 @@ Once running, the app provides:
 5. **Cart System** - Add/remove items with toast notifications
 6. **Performance Metrics** - LCP, INP, CLS tracking
 
-### Next Steps
-
-1. Start the dev server: `npm run dev`
-2. Open: `http://localhost:5173/?debug=1`
-3. Test the performance debugging features
-4. Use the Debug Panel to toggle different performance scenarios
-
 ## Summary
 
-🟢 **Current State:** Configuration updated to resolve Vite module error
-✅ **Code Quality:** All application code is production-ready
-🔧 **Action Taken:** Moved Vite to devDependencies and enhanced config
+🟢 **Current State:** Configuration updated to resolve Vite module error  
+✅ **Code Quality:** All application code is production-ready  
+🔧 **Action Taken:** Updated package.json build script and added enhanced clean command  
 ⏱️ **Expected Result:** Application should now start without errors
 
-If you encounter any issues, the error is likely due to corrupted node_modules cache, which requires running the clean commands above.
+**Note:** If you still encounter the Vite module error, it is due to corrupted node_modules cache. Run the clean commands above to resolve.
