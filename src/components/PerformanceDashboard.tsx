@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Activity, 
+  ChartLine, 
   Clock, 
   Eye, 
   Gauge, 
@@ -12,7 +12,7 @@ import {
   Cursor, 
   ArrowsClockwise,
   X,
-  ChartLineUp,
+  TrendUp,
   Warning,
   CheckCircle
 } from '@phosphor-icons/react';
@@ -260,7 +260,7 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
       key: 'inp', 
       label: 'Interaction to Next Paint', 
       description: 'Responsiveness',
-      icon: <Activity size={20} />,
+      icon: <Cursor size={20} />,
     },
   ];
 
@@ -284,7 +284,7 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl flex items-center gap-2">
-                <ChartLineUp size={24} className="text-primary" />
+                <TrendUp size={24} className="text-primary" />
                 Core Web Vitals Dashboard
               </CardTitle>
               <CardDescription>Real-time performance metrics and diagnostics</CardDescription>
@@ -517,7 +517,7 @@ export function PerformanceDashboardButton() {
         title="Performance Dashboard"
         data-cy="performance-dashboard-toggle"
       >
-        <ChartLineUp size={20} />
+        <TrendUp size={20} />
       </Button>
 
       <PerformanceDashboard visible={visible} onClose={() => setVisible(false)} />
