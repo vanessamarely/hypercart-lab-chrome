@@ -1,15 +1,10 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
-import { defineConfig, PluginOption } from "vite";
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { defineConfig, type PluginOption } from "vite";
+import path from "path";
 
 import sparkPlugin from "@github/spark/spark-vite-plugin";
 import createIconImportProxy from "@github/spark/vitePhosphorIconProxyPlugin";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = process.env.PROJECT_ROOT || __dirname;
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH ? `/${process.env.VITE_BASE_PATH}/` : '/',
@@ -21,36 +16,23 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': resolve(projectRoot, 'src')
-    },
-    dedupe: ['react', 'react-dom'],
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+      '@': path.resolve(__dirname, 'src')
+    }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime'],
-    exclude: ['@github/spark'],
-    force: true
+    include: ['react', 'react-dom'],
+    exclude: ['@github/spark']
   },
   server: {
     port: 5173,
     strictPort: false,
-    hmr: {
-      overlay: true
-    },
     fs: {
       strict: false
     }
   },
   build: {
     commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
+      include: [/node_modules/]
     }
-  },
-  clearScreen: false
+  }
 });

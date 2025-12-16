@@ -11,7 +11,8 @@
         "optimize": "vite optimize",
         "preview": "vite preview",
         "clean": "rm -rf node_modules/.vite && rm -rf node_modules/.cache",
-        "repair": "rm -rf node_modules/.vite && rm -rf node_modules/.cache && npm install && vite optimize"
+        "repair": "rm -rf node_modules/.vite && rm -rf node_modules/.cache && vite optimize",
+        "postinstall": "vite optimize --force"
     },
     "dependencies": {
         "@github/spark": "^0.0.1",
