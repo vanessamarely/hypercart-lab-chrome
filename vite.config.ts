@@ -28,19 +28,29 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
-    exclude: ['@github/spark']
+    exclude: ['@github/spark'],
+    force: true
   },
   server: {
     port: 5173,
     strictPort: false,
     hmr: {
       overlay: true
+    },
+    fs: {
+      strict: false
     }
   },
   build: {
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
     }
-  }
+  },
+  clearScreen: false
 });
