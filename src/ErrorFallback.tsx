@@ -9,7 +9,7 @@ interface ErrorFallbackProps {
 }
 
 export const ErrorFallback = ({ error, resetErrorBoundary }: ErrorFallbackProps) => {
-  if (import.meta.env.DEV) throw error;
+  console.error('Application error caught by ErrorBoundary:', error);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

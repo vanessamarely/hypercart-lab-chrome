@@ -23,7 +23,8 @@ export default defineConfig({
     alias: {
       '@': resolve(projectRoot, 'src')
     },
-    dedupe: ['react', 'react-dom']
+    dedupe: ['react', 'react-dom'],
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
@@ -31,6 +32,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: false
+    strictPort: false,
+    hmr: {
+      overlay: true
+    }
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    }
   }
 });
