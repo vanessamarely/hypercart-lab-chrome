@@ -2,17 +2,17 @@
 
 A production-ready React + TypeScript demo application designed for Chrome DevTools performance debugging conference talks. Features toggleable performance issues for live demonstrations of Core Web Vitals optimization techniques.
 
+> **⚠️ Important**: If you encounter a Vite module error during startup, run `./fix-deps.sh` to reinstall dependencies. See [Quick Start](#quick-start) section below.
+
 ## Quick Start
 
 ```bash
 # Install dependencies
 npm install
 
-# Configure Unsplash API (optional but recommended)
-# 1. Copy .env file and add your Unsplash access key
-cp .env .env.local
-# 2. Edit .env.local and replace 'your_unsplash_access_key_here' with your actual key
-# Get your key from: https://unsplash.com/developers
+# If you encounter Vite module errors, run the fix script:
+chmod +x fix-deps.sh
+./fix-deps.sh
 
 # Start development server
 npm run dev
@@ -26,6 +26,31 @@ npm run build
 # Serve production build
 npm run preview
 ```
+
+## ⚠️ Troubleshooting Installation
+
+If you see an error like `Cannot find module '.../vite/dist/node/chunks/dist.js'`:
+
+**Quick Fix:**
+```bash
+# Run the automated fix script
+chmod +x fix-deps.sh
+./fix-deps.sh
+```
+
+**Manual Fix:**
+```bash
+# Remove corrupted dependencies
+rm -rf node_modules package-lock.json
+
+# Clear npm cache
+npm cache clean --force
+
+# Reinstall
+npm install
+```
+
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for more details.
 
 ## Configuration
 
