@@ -275,6 +275,13 @@ const activeCount = getActiveFlagCount()
 
 ### Common Issues
 
+**Vite module resolution error** (`Cannot find module 'dist.js'`):
+```bash
+# Clean install to fix corrupted node_modules
+rm -rf node_modules package-lock.json
+npm install
+```
+
 **Debug panel not showing**:
 - Ensure URL contains `?debug=1`
 - Check browser console for errors
@@ -293,6 +300,11 @@ const activeCount = getActiveFlagCount()
 - Check `/public/thirdparty.js` exists
 - Verify network panel shows script request
 - Banner should appear at top when loaded
+
+**Images not loading**:
+- Check Unsplash API key is correctly set in `.env`
+- Verify network requests aren't being blocked
+- Check console for CORS or API errors
 
 ### Browser Compatibility
 
