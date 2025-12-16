@@ -203,6 +203,7 @@ export function ProductsPage({ onProductClick, onNavigate }: ProductsPageProps) 
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={addedProduct}
+          productImage={addedProduct ? productImages.get(addedProduct.id) : undefined}
           onContinueShopping={() => setShowCartModal(false)}
           onViewCart={() => {
             setShowCartModal(false);

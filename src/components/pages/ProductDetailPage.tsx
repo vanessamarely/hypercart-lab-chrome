@@ -274,6 +274,7 @@ export function ProductDetailPage({ productId, onNavigate }: ProductDetailPagePr
           open={showCartModal}
           onOpenChange={setShowCartModal}
           product={product}
+          productImage={productImage}
           onContinueShopping={() => {
             setShowCartModal(false);
             onNavigate('products');

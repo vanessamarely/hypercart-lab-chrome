@@ -10,6 +10,7 @@ interface CartAddedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product | null;
+  productImage?: string;
   onContinueShopping: () => void;
   onViewCart: () => void;
 }
@@ -17,13 +18,15 @@ interface CartAddedModalProps {
 export function CartAddedModal({ 
   open, 
   onOpenChange, 
-  product, 
+  product,
+  productImage, 
   onContinueShopping,
   onViewCart 
 }: CartAddedModalProps) {
   const [cart] = useKV<CartItem[]>('hypercart-cart', []);
   
   const totalCartItems = (cart || []).reduce((total, item) => total + item.quantity, 0);
+  const imageUrl = productImage || product?.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop';
 
   return (
     <Dialog open={open && !!product} onOpenChange={onOpenChange}>
@@ -40,7 +43,7 @@ export function CartAddedModal({
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
                 <img
-                  src={product.image}
+                  src={imageUrl}
                   alt={product.name}
                   className="w-16 h-16 object-cover rounded-md"
                 />

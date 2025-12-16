@@ -9,6 +9,7 @@ import { useKV } from '@github/spark/hooks';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { CartItem } from '@/lib/types';
+import { getUnsplashImageForProduct } from '@/lib/unsplash';
 import { toast } from 'sonner';
 
 interface CheckoutPageProps {
@@ -18,6 +19,7 @@ interface CheckoutPageProps {
 export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
   const [cart, setCart] = useKV<CartItem[]>('hypercart-cart', []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [productImages, setProductImages] = useState<Map<number, string>>(new Map());
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -33,7 +35,27 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
 
   useEffect(() => {
     addPerformanceMark('checkout-page-load');
-  }, []);
+    
+    const loadImages = async () => {
+      const cartItems = cart || [];
+      const imageMap = new Map<number, string>();
+      
+      for (const item of cartItems) {
+        const imageUrl = await getUnsplashImageForProduct(
+          item.product.id,
+          item.product.category,
+          item.product.name
+        );
+        imageMap.set(item.product.id, imageUrl);
+      }
+      
+      setProductImages(imageMap);
+    };
+    
+    if (cart && cart.length > 0) {
+      loadImages();
+    }
+  }, [cart?.length]);
 
   const cartItems = cart || [];
   const subtotal = cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
@@ -261,7 +283,7 @@ export function CheckoutPage({ onNavigate }: CheckoutPageProps) {
                   {cartItems.map((item) => (
                     <div key={item.product.id} className="flex items-center space-x-4">
                       <img
-                        src={item.product.image}
+                        src={productImages.get(item.product.id) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop'}
                         alt={item.product.name}
                         className={`w-16 h-16 object-cover rounded ${flags.missingSizes ? 'no-dimensions' : ''}`}
                         style={!flags.missingSizes ? { width: '64px', height: '64px' } : undefined}
