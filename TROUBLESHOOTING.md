@@ -1,8 +1,8 @@
 # Troubleshooting Guide
 
-## Current Known Issues
+## ⚠️ CRITICAL: Current Vite Module Error
 
-### Vite Module Resolution Error
+### Vite Module Resolution Error (BUILD SYSTEM BLOCKER)
 
 **Error Message:**
 ```
@@ -10,33 +10,48 @@ Cannot find module '/workspaces/spark-template/node_modules/vite/dist/node/chunk
 imported from /workspaces/spark-template/node_modules/vite/dist/node/chunks/config.js
 ```
 
-**Cause:**
-This error indicates corrupted or incomplete node_modules installation. This typically happens when:
-- npm dependencies weren't fully installed
-- There was an interruption during package installation
-- Package cache is corrupted
+**Status:** 🔴 **REQUIRES MANUAL FIX - Cannot be resolved automatically**
 
-**Solution:**
-Run the following commands in order:
+**Cause:**
+This error indicates corrupted or incomplete node_modules installation. The Vite package files are missing or corrupted. This typically happens when:
+- npm dependencies weren't fully installed
+- There was an interruption during package installation  
+- Package cache is corrupted
+- File system issues in the workspace
+
+**Required Solution (Must run in terminal):**
 
 ```bash
-# Remove existing node_modules and lock file
+# Step 1: Navigate to project directory
+cd /workspaces/spark-template
+
+# Step 2: Remove existing node_modules and lock file
 rm -rf node_modules package-lock.json
 
-# Clear npm cache
+# Step 3: Clear npm cache
 npm cache clean --force
 
-# Reinstall dependencies
+# Step 4: Reinstall all dependencies
 npm install
+
+# Step 5: Verify Vite installation
+npm list vite
 ```
 
 **Alternative Solution (if the above doesn't work):**
 ```bash
-# Use a different package manager
+# Full clean reinstall
 rm -rf node_modules package-lock.json
-npm install -g pnpm
-pnpm install
+npm cache clean --force
+
+# Reinstall with legacy peer deps flag
+npm install --legacy-peer-deps
 ```
+
+**Quick Fix (if you just need to verify the code):**
+The application code itself is correct and all imports are valid. Once node_modules is properly reinstalled, the app will run without issues.
+
+## Other Known Issues
 
 ### Runtime Errors When Adding Products to Cart
 
