@@ -22,9 +22,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(projectRoot, 'src')
-    }
+    },
+    dedupe: ['react', 'react-dom']
   },
   optimizeDeps: {
-    include: ['react', 'react-dom']
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    exclude: ['@github/spark']
+  },
+  server: {
+    port: 5173,
+    strictPort: false
   }
 });
