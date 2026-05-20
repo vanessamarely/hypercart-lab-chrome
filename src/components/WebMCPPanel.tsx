@@ -682,7 +682,7 @@ export function WebMCPPanel() {
 
     analysis += `📋 PRIORITY ACTION ITEMS:\n\n`;
     
-    const actions = [];
+    const actions: string[] = [];
     
     if (renderBlockingScripts.length > 2) {
       actions.push(`HIGH: Defer ${renderBlockingScripts.length} blocking scripts (saves ~${(scriptBlockingTime * 0.8 / 1000).toFixed(1)}s)`);
