@@ -1,0 +1,974 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { 
+  TrendUp,
+  Brain,
+  X,
+  Clock,
+  Eye,
+  Layout,
+  Cursor,
+  Gauge,
+  CheckCircle,
+  Warning,
+  XCircle,
+  Circle,
+  Download,
+  Copy,
+  Database,
+  ChartLine,
+  Cpu,
+  Target,
+  Bug,
+  Network,
+  ArrowsClockwise
+} from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
+import { useWebVitals, useCustomMetrics, usePerformanceExport } from '@/hooks/use-web-vitals';
+import { useKV } from '@github/spark/hooks';
+import { toast } from 'sonner';
+
+interface WebVitalMetric {
+  name: string;
+  value: number;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  delta?: number;
+  entries?: PerformanceEntry[];
+  attribution?: any;
+}
+
+interface MCPInteraction {
+  id: string;
+  timestamp: number;
+  tool: string;
+  duration: number;
+  success: boolean;
+  context: string;
+}
+
+interface PerformanceSnapshot {
+  timestamp: number;
+  lcp: number;
+  fcp: number;
+  cls: number;
+  ttfb: number;
+  longTasks: number;
+}
+
+const THRESHOLDS = {
+  lcp: { good: 2500, poor: 4000 },
+  fid: { good: 100, poor: 300 },
+  cls: { good: 0.1, poor: 0.25 },
+  inp: { good: 200, poor: 500 },
+  fcp: { good: 1800, poor: 3000 },
+  ttfb: { good: 800, poor: 1800 },
+};
+
+function getRating(name: string, value: number): 'good' | 'needs-improvement' | 'poor' {
+  const threshold = THRESHOLDS[name as keyof typeof THRESHOLDS];
+  if (!threshold) return 'good';
+  
+  if (value <= threshold.good) return 'good';
+  if (value <= threshold.poor) return 'needs-improvement';
+  return 'poor';
+}
+
+function formatValue(name: string, value: number): string {
+  if (name === 'cls') {
+    return value.toFixed(3);
+  }
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)}s`;
+  }
+  return `${Math.round(value)}ms`;
+}
+
+function getRatingColor(rating: 'good' | 'needs-improvement' | 'poor'): string {
+  switch (rating) {
+    case 'good':
+      return 'text-green-600 bg-green-50 border-green-200';
+    case 'needs-improvement':
+      return 'text-orange-600 bg-orange-50 border-orange-200';
+    case 'poor':
+      return 'text-red-600 bg-red-50 border-red-200';
+  }
+}
+
+function getRatingIcon(rating: 'good' | 'needs-improvement' | 'poor') {
+  switch (rating) {
+    case 'good':
+      return <CheckCircle weight="fill" className="text-green-600" />;
+    case 'needs-improvement':
+      return <Warning weight="fill" className="text-orange-600" />;
+    case 'poor':
+      return <Warning weight="fill" className="text-red-600" />;
+  }
+}
+
+function getStatusIcon(value: number, metric: 'lcp' | 'fcp' | 'cls' | 'ttfb') {
+  let isGood = false;
+  
+  switch (metric) {
+    case 'lcp':
+      isGood = value < 2500;
+      break;
+    case 'fcp':
+      isGood = value < 1800;
+      break;
+    case 'cls':
+      isGood = value < 0.1;
+      break;
+    case 'ttfb':
+      isGood = value < 800;
+      break;
+  }
+  
+  return isGood ? (
+    <CheckCircle size={16} className="text-green-500" weight="fill" />
+  ) : (
+    <Warning size={16} className="text-yellow-500" weight="fill" />
+  );
+}
+
+function formatTimestamp(timestamp: number) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
+}
+
+export function UnifiedDashboard({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const vitals = useWebVitals({
+    enabled: visible,
+    reportToConsole: true,
+  });
+  const { customMetrics } = useCustomMetrics();
+  const { exportData, copyToClipboard } = usePerformanceExport();
+  
+  const [interactions, setInteractions] = useKV<MCPInteraction[]>('mcp-interactions', []);
+  const [snapshots, setSnapshots] = useKV<PerformanceSnapshot[]>('mcp-snapshots', []);
+  const [currentMetrics, setCurrentMetrics] = useState<PerformanceSnapshot | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [cartData, setCartData] = useState<any>(null);
+  
+  const [resources, setResources] = useState<any[]>([]);
+  const [longTasks, setLongTasks] = useState<PerformanceEntry[]>([]);
+  const [navigationTiming, setNavigationTiming] = useState<PerformanceNavigationTiming | null>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const navEntries = performance.getEntriesByType('navigation');
+    if (navEntries.length > 0) {
+      const navTiming = navEntries[0] as PerformanceNavigationTiming;
+      setNavigationTiming(navTiming);
+    }
+
+    const resourceEntries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+    const resourceTimings = resourceEntries.map(entry => ({
+      name: entry.name.split('/').pop() || entry.name,
+      duration: entry.duration,
+      size: entry.transferSize || 0,
+      type: entry.initiatorType,
+    })).sort((a, b) => b.duration - a.duration).slice(0, 20);
+    
+    setResources(resourceTimings);
+
+    try {
+      const longTaskObserver = new PerformanceObserver((list) => {
+        setLongTasks(prev => [...prev, ...list.getEntries()]);
+      });
+      longTaskObserver.observe({ type: 'longtask', buffered: true });
+      
+      return () => longTaskObserver.disconnect();
+    } catch (e) {
+      console.warn('Long task observation not supported');
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    
+    captureCurrentMetrics();
+    const interval = setInterval(() => {
+      if (isRecording) {
+        captureCurrentMetrics();
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [visible, isRecording]);
+
+  const captureCurrentMetrics = () => {
+    try {
+      const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+      const lcp = lcpEntries.length > 0 ? (lcpEntries[lcpEntries.length - 1] as any).startTime : 0;
+      
+      const fcpEntries = performance.getEntriesByName('first-contentful-paint');
+      const fcp = fcpEntries.length > 0 ? fcpEntries[0].startTime : 0;
+      
+      const clsEntries = performance.getEntriesByType('layout-shift') as any[];
+      const cls = clsEntries.reduce((sum, entry) => !entry.hadRecentInput ? sum + entry.value : sum, 0);
+      
+      const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      const ttfb = navEntries.length > 0 ? navEntries[0].responseStart : 0;
+      
+      const longTasksCount = performance.getEntriesByType('longtask').length;
+
+      const snapshot: PerformanceSnapshot = {
+        timestamp: Date.now(),
+        lcp: lcp,
+        fcp: fcp,
+        cls: cls,
+        ttfb: ttfb,
+        longTasks: longTasksCount
+      };
+
+      setCurrentMetrics(snapshot);
+    } catch (error) {
+      console.error('Error capturing metrics:', error);
+    }
+  };
+
+  const recordInteraction = (tool: string, duration: number, success: boolean, context: string) => {
+    const interaction: MCPInteraction = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      tool,
+      duration,
+      success,
+      context
+    };
+    
+    setInteractions(prev => [interaction, ...(prev || []).slice(0, 99)]);
+  };
+
+  const executeGetActiveCart = async () => {
+    const start = performance.now();
+    
+    try {
+      const cartString = localStorage.getItem('hypercart-cart');
+      const cart = cartString ? JSON.parse(cartString) : [];
+      
+      const cartInfo = {
+        itemCount: cart.length,
+        totalItems: cart.reduce((sum: number, item: any) => sum + item.quantity, 0),
+        items: cart.map((item: any) => ({
+          productId: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        subtotal: cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+      };
+      
+      setCartData(cartInfo);
+      
+      const duration = performance.now() - start;
+      recordInteraction('get_active_cart', duration, true, `Retrieved ${cartInfo.itemCount} unique items`);
+      
+      toast.success('Cart data retrieved via MCP', {
+        description: `${cartInfo.totalItems} items in cart`
+      });
+      
+      return cartInfo;
+    } catch (error) {
+      const duration = performance.now() - start;
+      recordInteraction('get_active_cart', duration, false, `Error: ${error}`);
+      toast.error('Failed to retrieve cart data');
+      return null;
+    }
+  };
+
+  const executeAnalyzeLCP = async () => {
+    const start = performance.now();
+    
+    try {
+      const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+      if (lcpEntries.length === 0) {
+        throw new Error('No LCP data available');
+      }
+      
+      const lcp = lcpEntries[lcpEntries.length - 1] as any;
+      const lcpValue = lcp.startTime;
+      const lcpElement = lcp.element?.tagName || 'Unknown';
+      
+      const duration = performance.now() - start;
+      recordInteraction('analyze_lcp', duration, true, `LCP: ${(lcpValue / 1000).toFixed(2)}s on ${lcpElement}`);
+      
+      toast.success('LCP analyzed', {
+        description: `${(lcpValue / 1000).toFixed(2)}s on ${lcpElement}`
+      });
+    } catch (error) {
+      const duration = performance.now() - start;
+      recordInteraction('analyze_lcp', duration, false, `Error: ${error}`);
+      toast.error('LCP analysis failed');
+    }
+  };
+
+  const executeDetectLongTasks = async () => {
+    const start = performance.now();
+    
+    try {
+      const longTasksData = performance.getEntriesByType('longtask');
+      const totalBlocking = longTasksData.reduce((sum, task) => sum + (task.duration - 50), 0);
+      
+      const duration = performance.now() - start;
+      recordInteraction('detect_long_tasks', duration, true, `Found ${longTasksData.length} long tasks, ${totalBlocking.toFixed(0)}ms blocking`);
+      
+      toast.success('Long tasks detected', {
+        description: `${longTasksData.length} tasks blocking ${totalBlocking.toFixed(0)}ms`
+      });
+    } catch (error) {
+      const duration = performance.now() - start;
+      recordInteraction('detect_long_tasks', duration, false, `Error: ${error}`);
+      toast.error('Long task detection failed');
+    }
+  };
+
+  const executeAnalyzeCLS = async () => {
+    const start = performance.now();
+    
+    try {
+      const layoutShifts = performance.getEntriesByType('layout-shift') as any[];
+      const cls = layoutShifts.reduce((sum, entry) => !entry.hadRecentInput ? sum + entry.value : sum, 0);
+      
+      const duration = performance.now() - start;
+      recordInteraction('analyze_cls', duration, true, `CLS: ${cls.toFixed(3)} from ${layoutShifts.length} shifts`);
+      
+      toast.success('CLS analyzed', {
+        description: `Score: ${cls.toFixed(3)} (${layoutShifts.length} shifts)`
+      });
+    } catch (error) {
+      const duration = performance.now() - start;
+      recordInteraction('analyze_cls', duration, false, `Error: ${error}`);
+      toast.error('CLS analysis failed');
+    }
+  };
+
+  const takeSnapshot = () => {
+    if (currentMetrics) {
+      setSnapshots(prev => [...(prev || []), currentMetrics].slice(-20));
+      toast.success('Performance snapshot saved');
+    }
+  };
+
+  const clearHistory = () => {
+    setInteractions([]);
+    setSnapshots([]);
+    toast.success('History cleared');
+  };
+
+  const handleExport = () => {
+    exportData();
+    toast.success('Performance metrics exported');
+  };
+
+  const handleCopy = async () => {
+    const success = await copyToClipboard();
+    if (success) {
+      toast.success('Metrics copied to clipboard');
+    } else {
+      toast.error('Failed to copy metrics');
+    }
+  };
+
+  if (!visible) return null;
+
+  const coreMetrics = [
+    { 
+      key: 'lcp', 
+      label: 'Largest Contentful Paint', 
+      description: 'Loading performance',
+      icon: <Eye size={20} />,
+    },
+    { 
+      key: 'inp', 
+      label: 'Interaction to Next Paint', 
+      description: 'Responsiveness',
+      icon: <Cursor size={20} />,
+    },
+    { 
+      key: 'cls', 
+      label: 'Cumulative Layout Shift', 
+      description: 'Visual stability',
+      icon: <Layout size={20} />,
+    },
+    { 
+      key: 'fcp', 
+      label: 'First Contentful Paint',
+      description: 'Initial render speed',
+      icon: <Clock size={20} />,
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-auto performance-dashboard-overlay">
+      <Card className="w-full max-w-[95vw] max-h-[95vh] overflow-auto animate-in fade-in-0 zoom-in-95 duration-200">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <TrendUp size={24} className="text-primary" />
+                  <span>Core Web Vitals</span>
+                </div>
+                <Separator orientation="vertical" className="h-6" />
+                <div className="flex items-center gap-2">
+                  <Brain size={24} className="text-primary" weight="duotone" />
+                  <span>Web MCP</span>
+                </div>
+              </CardTitle>
+              <CardDescription>Unified performance debugging dashboard with AI-powered analysis</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={isRecording ? "destructive" : "default"}
+                size="sm"
+                onClick={() => setIsRecording(!isRecording)}
+              >
+                <Circle size={16} className="mr-2" weight={isRecording ? "fill" : "regular"} />
+                {isRecording ? 'Recording' : 'Record'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={takeSnapshot}>
+                <Target size={16} className="mr-2" />
+                Snapshot
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCopy}>
+                <Copy size={16} className="mr-2" />
+                Copy
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download size={16} className="mr-2" />
+                Export
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X size={20} />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendUp size={20} className="text-primary" />
+                  Real-time Web Vitals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {coreMetrics.map(({ key, label, icon }) => {
+                    const metric = vitals[key as keyof typeof vitals];
+                    
+                    return (
+                      <Card key={key} className={cn(
+                        'transition-all',
+                        metric && getRatingColor(metric.rating)
+                      )}>
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {icon}
+                              <CardTitle className="text-sm">{key.toUpperCase()}</CardTitle>
+                            </div>
+                            {metric && getRatingIcon(metric.rating)}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {metric ? (
+                            <div className="text-2xl font-bold">
+                              {formatValue(key, metric.value)}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">—</div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Brain size={20} className="text-primary" weight="duotone" />
+                  MCP Quick Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Eye size={16} />
+                        <CardTitle className="text-sm">LCP</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {currentMetrics ? (currentMetrics.lcp / 1000).toFixed(2) : '--'}s
+                      </div>
+                      {currentMetrics && (
+                        <Progress 
+                          value={Math.min(100, (currentMetrics.lcp / 2500) * 100)} 
+                          className="mt-2 h-1"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Clock size={16} />
+                        <CardTitle className="text-sm">FCP</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {currentMetrics ? (currentMetrics.fcp / 1000).toFixed(2) : '--'}s
+                      </div>
+                      {currentMetrics && (
+                        <Progress 
+                          value={Math.min(100, (currentMetrics.fcp / 1800) * 100)} 
+                          className="mt-2 h-1"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Layout size={16} />
+                        <CardTitle className="text-sm">CLS</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {currentMetrics ? currentMetrics.cls.toFixed(3) : '--'}
+                      </div>
+                      {currentMetrics && (
+                        <Progress 
+                          value={Math.min(100, (currentMetrics.cls / 0.25) * 100)} 
+                          className="mt-2 h-1"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Bug size={16} />
+                        <CardTitle className="text-sm">Long Tasks</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {currentMetrics?.longTasks || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">&gt;50ms</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="mcp-tools" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="mcp-tools">MCP Tools</TabsTrigger>
+              <TabsTrigger value="interactions">Interactions</TabsTrigger>
+              <TabsTrigger value="snapshots">Snapshots</TabsTrigger>
+              <TabsTrigger value="vitals-detail">Vitals Detail</TabsTrigger>
+              <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="long-tasks">Long Tasks</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="mcp-tools" className="space-y-4 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">MCP Tool Execution</CardTitle>
+                    <CardDescription>Execute Web MCP tools for AI-assisted debugging</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start h-auto py-4"
+                      onClick={executeGetActiveCart}
+                    >
+                      <Database size={20} className="mr-3 text-primary" />
+                      <div className="text-left">
+                        <div className="font-semibold text-sm">get_active_cart</div>
+                        <div className="text-xs text-muted-foreground">
+                          Query cart without UI interaction
+                        </div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start h-auto py-4"
+                      onClick={executeAnalyzeLCP}
+                    >
+                      <ChartLine size={20} className="mr-3 text-primary" />
+                      <div className="text-left">
+                        <div className="font-semibold text-sm">analyze_lcp</div>
+                        <div className="text-xs text-muted-foreground">
+                          Deep LCP analysis with attribution
+                        </div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start h-auto py-4"
+                      onClick={executeDetectLongTasks}
+                    >
+                      <Cpu size={20} className="mr-3 text-primary" />
+                      <div className="text-left">
+                        <div className="font-semibold text-sm">detect_long_tasks</div>
+                        <div className="text-xs text-muted-foreground">
+                          Find main thread blockers
+                        </div>
+                      </div>
+                    </Button>
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start h-auto py-4"
+                      onClick={executeAnalyzeCLS}
+                    >
+                      <Target size={20} className="mr-3 text-primary" />
+                      <div className="text-left">
+                        <div className="font-semibold text-sm">analyze_cls</div>
+                        <div className="text-xs text-muted-foreground">
+                          Identify layout shift sources
+                        </div>
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {cartData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Cart Inspector</CardTitle>
+                      <CardDescription>Direct cart data via MCP</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Card className="p-3">
+                          <div className="text-xs text-muted-foreground mb-1">Unique Items</div>
+                          <div className="text-2xl font-bold">{cartData.itemCount}</div>
+                        </Card>
+                        <Card className="p-3">
+                          <div className="text-xs text-muted-foreground mb-1">Total Items</div>
+                          <div className="text-2xl font-bold">{cartData.totalItems}</div>
+                        </Card>
+                      </div>
+
+                      <Card className="p-3 bg-primary/5">
+                        <div className="text-xs text-muted-foreground mb-1">Subtotal</div>
+                        <div className="text-2xl font-bold">${cartData.subtotal.toFixed(2)}</div>
+                      </Card>
+
+                      <ScrollArea className="h-40">
+                        {cartData.items.length === 0 ? (
+                          <div className="text-center py-6 text-sm text-muted-foreground">
+                            Cart is empty
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {cartData.items.map((item: any, idx: number) => (
+                              <Card key={idx} className="p-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs">
+                                    <div className="font-semibold">{item.name}</div>
+                                    <div className="text-muted-foreground">Qty: {item.quantity}</div>
+                                  </div>
+                                  <div className="text-sm font-semibold">${item.price}</div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="interactions" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>MCP Interaction Log</CardTitle>
+                  <CardDescription>Real-time log of MCP tool executions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {!interactions || interactions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Network size={48} className="text-muted-foreground mb-4" />
+                        <p className="text-sm text-muted-foreground">No interactions recorded</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {interactions.map((interaction) => (
+                          <Card key={interaction.id} className="p-4">
+                            <div className="flex items-start gap-3">
+                              {interaction.success ? (
+                                <CheckCircle size={20} className="text-green-500 mt-0.5" weight="fill" />
+                              ) : (
+                                <XCircle size={20} className="text-red-500 mt-0.5" weight="fill" />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-mono text-sm font-semibold">{interaction.tool}</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {interaction.duration.toFixed(1)}ms
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{interaction.context}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <Clock size={12} className="inline mr-1" />
+                                  {formatTimestamp(interaction.timestamp)}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="snapshots" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Snapshots</CardTitle>
+                  <CardDescription>Compare metrics before and after optimizations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {!snapshots || snapshots.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Target size={48} className="text-muted-foreground mb-4" />
+                        <p className="text-sm text-muted-foreground">No snapshots saved</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {(snapshots || []).slice().reverse().map((snapshot, idx) => (
+                          <Card key={snapshot.timestamp} className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-semibold">
+                                Snapshot #{(snapshots || []).length - idx}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatTimestamp(snapshot.timestamp)}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-3">
+                              <div>
+                                <div className="text-xs text-muted-foreground">LCP</div>
+                                <div className="text-sm font-semibold">{(snapshot.lcp / 1000).toFixed(2)}s</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">FCP</div>
+                                <div className="text-sm font-semibold">{(snapshot.fcp / 1000).toFixed(2)}s</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">CLS</div>
+                                <div className="text-sm font-semibold">{snapshot.cls.toFixed(3)}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">TTFB</div>
+                                <div className="text-sm font-semibold">{(snapshot.ttfb / 1000).toFixed(2)}s</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Long Tasks</div>
+                                <div className="text-sm font-semibold">{snapshot.longTasks}</div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="vitals-detail" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {coreMetrics.map(({ key, label, description, icon }) => {
+                  const metric = vitals[key as keyof typeof vitals];
+                  
+                  return (
+                    <Card key={key} className={cn(
+                      'transition-all',
+                      metric && getRatingColor(metric.rating)
+                    )}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            {icon}
+                            <div>
+                              <CardTitle className="text-base">{label}</CardTitle>
+                              <CardDescription className="text-xs">{description}</CardDescription>
+                            </div>
+                          </div>
+                          {metric && getRatingIcon(metric.rating)}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {metric ? (
+                          <div className="space-y-2">
+                            <div className="text-3xl font-bold">
+                              {formatValue(key, metric.value)}
+                            </div>
+                            <Badge variant={metric.rating === 'good' ? 'default' : 'secondary'}>
+                              {metric.rating.replace('-', ' ').toUpperCase()}
+                            </Badge>
+                            {metric.attribution && (
+                              <details className="text-xs text-muted-foreground mt-2 cursor-pointer">
+                                <summary className="font-medium">Attribution Data</summary>
+                                <div className="mt-2 space-y-1 pl-4">
+                                  {Object.entries(metric.attribution).map(([attrKey, attrValue]) => (
+                                    <div key={attrKey} className="flex justify-between">
+                                      <span className="text-muted-foreground">{attrKey}:</span>
+                                      <span className="font-mono text-xs">
+                                        {typeof attrValue === 'number' ? attrValue.toFixed(2) : String(attrValue)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">Waiting for data...</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="resources" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resource Timing</CardTitle>
+                  <CardDescription>Top 20 slowest resources by load time</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {resources.length > 0 ? (
+                      <div className="space-y-2">
+                        {resources.map((resource, index) => (
+                          <div 
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-muted/30 rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">{resource.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {resource.type} • {(resource.size / 1024).toFixed(2)} KB
+                              </div>
+                            </div>
+                            <div className="text-sm font-mono font-bold ml-4">
+                              {resource.duration.toFixed(2)}ms
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        No resource data available
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="long-tasks" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ArrowsClockwise size={20} />
+                    Long Tasks
+                  </CardTitle>
+                  <CardDescription>Tasks that blocked the main thread for more than 50ms</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {longTasks.length > 0 ? (
+                      <div className="space-y-2">
+                        {longTasks.map((task, index) => (
+                          <div 
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-muted/30 rounded-md"
+                          >
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">Long Task #{index + 1}</div>
+                              <div className="text-xs text-muted-foreground">
+                                Started at {task.startTime.toFixed(2)}ms
+                              </div>
+                            </div>
+                            <Badge variant={task.duration > 100 ? 'destructive' : 'secondary'}>
+                              {task.duration.toFixed(2)}ms
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        No long tasks detected
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function UnifiedDashboardButton() {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <>
+      <Button
+        className="fixed bottom-24 right-6 z-50 rounded-full w-14 h-14 shadow-lg"
+        onClick={() => setVisible(!visible)}
+        title="Unified Dashboard"
+        data-cy="unified-dashboard-toggle"
+      >
+        <div className="flex items-center gap-1">
+          <TrendUp size={16} />
+          <Brain size={16} weight="duotone" />
+        </div>
+      </Button>
+
+      <UnifiedDashboard visible={visible} onClose={() => setVisible(false)} />
+    </>
+  );
+}
