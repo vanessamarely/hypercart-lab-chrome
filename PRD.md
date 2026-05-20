@@ -13,11 +13,11 @@ Multiple routes with focused performance scenarios, persistent debugging state, 
 ## Essential Features
 
 **Performance Dashboard**
-- Functionality: Real-time Core Web Vitals monitoring dashboard with interactive metrics display
-- Purpose: Live visualization of performance metrics during presentations and development
+- Functionality: Real-time Core Web Vitals monitoring dashboard with interactive metrics display and advanced attribution data
+- Purpose: Live visualization of performance metrics during presentations and development with detailed breakdowns
 - Trigger: Click floating chart button on bottom right
-- Progression: Click dashboard button → View Core Web Vitals → Switch between tabs (Vitals/Resources/Navigation/Tasks) → Monitor real-time changes
-- Success criteria: Accurate real-time reporting of LCP, FID, CLS, INP, FCP, and TTFB with color-coded ratings
+- Progression: Click dashboard button → View Core Web Vitals with attribution → Switch between tabs (Vitals/Custom/Resources/Navigation/Tasks) → Export or copy metrics → Monitor real-time changes
+- Success criteria: Accurate real-time reporting of LCP, FID, CLS, INP, FCP, and TTFB with color-coded ratings, detailed attribution data showing timing breakdowns, custom metric tracking, and ability to export all metrics
 
 **Debug Panel System**
 - Functionality: Floating gear button reveals comprehensive toggle panel

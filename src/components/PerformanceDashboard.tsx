@@ -14,9 +14,13 @@ import {
   X,
   TrendUp,
   Warning,
-  CheckCircle
+  CheckCircle,
+  Download,
+  Copy
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { useWebVitals, useCustomMetrics, usePerformanceExport } from '@/hooks/use-web-vitals';
+import { toast } from 'sonner';
 
 interface WebVitalMetric {
   name: string;
@@ -93,7 +97,12 @@ function getRatingIcon(rating: 'good' | 'needs-improvement' | 'poor') {
 }
 
 export function PerformanceDashboard({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>({});
+  const vitals = useWebVitals({
+    enabled: visible,
+    reportToConsole: true,
+  });
+  const { customMetrics } = useCustomMetrics();
+  const { exportData, copyToClipboard } = usePerformanceExport();
   const [resources, setResources] = useState<ResourceTiming[]>([]);
   const [longTasks, setLongTasks] = useState<PerformanceEntry[]>([]);
   const [navigationTiming, setNavigationTiming] = useState<PerformanceNavigationTiming | null>(null);
@@ -101,90 +110,10 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
   useEffect(() => {
     if (!visible) return;
 
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === 'largest-contentful-paint') {
-          const lcpEntry = entry as PerformanceEntry;
-          setMetrics(prev => ({
-            ...prev,
-            lcp: {
-              name: 'LCP',
-              value: lcpEntry.startTime,
-              rating: getRating('lcp', lcpEntry.startTime),
-              entries: [lcpEntry],
-            },
-          }));
-        }
-
-        if (entry.entryType === 'first-input') {
-          const fidEntry = entry as PerformanceEventTiming;
-          const fidValue = fidEntry.processingStart - fidEntry.startTime;
-          setMetrics(prev => ({
-            ...prev,
-            fid: {
-              name: 'FID',
-              value: fidValue,
-              rating: getRating('fid', fidValue),
-              entries: [entry],
-            },
-          }));
-        }
-
-        if (entry.entryType === 'layout-shift' && !(entry as any).hadRecentInput) {
-          const clsEntry = entry as PerformanceEntry & { value: number };
-          setMetrics(prev => {
-            const currentCLS = prev.cls?.value || 0;
-            const newCLS = currentCLS + clsEntry.value;
-            return {
-              ...prev,
-              cls: {
-                name: 'CLS',
-                value: newCLS,
-                rating: getRating('cls', newCLS),
-                entries: [...(prev.cls?.entries || []), entry],
-              },
-            };
-          });
-        }
-
-        if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
-          setMetrics(prev => ({
-            ...prev,
-            fcp: {
-              name: 'FCP',
-              value: entry.startTime,
-              rating: getRating('fcp', entry.startTime),
-              entries: [entry],
-            },
-          }));
-        }
-
-        if (entry.entryType === 'longtask') {
-          setLongTasks(prev => [...prev, entry]);
-        }
-      }
-    });
-
-    try {
-      observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift', 'paint', 'longtask'] });
-    } catch (e) {
-      console.warn('Some performance metrics not supported:', e);
-    }
-
     const navEntries = performance.getEntriesByType('navigation');
     if (navEntries.length > 0) {
       const navTiming = navEntries[0] as PerformanceNavigationTiming;
       setNavigationTiming(navTiming);
-      
-      const ttfbValue = navTiming.responseStart - navTiming.requestStart;
-      setMetrics(prev => ({
-        ...prev,
-        ttfb: {
-          name: 'TTFB',
-          value: ttfbValue,
-          rating: getRating('ttfb', ttfbValue),
-        },
-      }));
     }
 
     const resourceEntries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
@@ -197,43 +126,31 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
     
     setResources(resourceTimings);
 
-    if ('PerformanceObserver' in window && 'PerformanceEventTiming' in window) {
-      const inpObserver = new PerformanceObserver((list) => {
-        let maxINP = 0;
-        const entries: PerformanceEntry[] = [];
-        
-        for (const entry of list.getEntries() as PerformanceEventTiming[]) {
-          const duration = entry.duration;
-          if (duration > maxINP) {
-            maxINP = duration;
-          }
-          entries.push(entry);
-        }
-        
-        if (maxINP > 0) {
-          setMetrics(prev => ({
-            ...prev,
-            inp: {
-              name: 'INP',
-              value: maxINP,
-              rating: getRating('inp', maxINP),
-              entries,
-            },
-          }));
-        }
+    try {
+      const longTaskObserver = new PerformanceObserver((list) => {
+        setLongTasks(prev => [...prev, ...list.getEntries()]);
       });
-
-      try {
-        inpObserver.observe({ type: 'event', buffered: true });
-      } catch (e) {
-        console.warn('INP observation not supported:', e);
-      }
+      longTaskObserver.observe({ type: 'longtask', buffered: true });
+      
+      return () => longTaskObserver.disconnect();
+    } catch (e) {
+      console.warn('Long task observation not supported');
     }
-
-    return () => {
-      observer.disconnect();
-    };
   }, [visible]);
+
+  const handleExport = () => {
+    exportData();
+    toast.success('Performance metrics exported');
+  };
+
+  const handleCopy = async () => {
+    const success = await copyToClipboard();
+    if (success) {
+      toast.success('Metrics copied to clipboard');
+    } else {
+      toast.error('Failed to copy metrics');
+    }
+  };
 
   if (!visible) return null;
 
@@ -282,22 +199,33 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
       <Card className="w-full max-w-6xl max-h-[90vh] overflow-auto animate-in fade-in-0 zoom-in-95 duration-200">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center justify-between">
               <CardTitle className="text-2xl flex items-center gap-2">
                 <TrendUp size={24} className="text-primary" />
                 Core Web Vitals Dashboard
               </CardTitle>
-              <CardDescription>Real-time performance metrics and diagnostics</CardDescription>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopy}>
+                  <Copy size={16} className="mr-2" />
+                  Copy
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download size={16} className="mr-2" />
+                  Export
+                </Button>
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  <X size={20} />
+                </Button>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={20} />
-            </Button>
+            <CardDescription>Real-time performance metrics with detailed attribution</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="vitals" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="vitals">Core Vitals</TabsTrigger>
+              <TabsTrigger value="custom">Custom Metrics</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               <TabsTrigger value="timing">Navigation</TabsTrigger>
               <TabsTrigger value="tasks">Long Tasks</TabsTrigger>
@@ -306,7 +234,7 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
             <TabsContent value="vitals" className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {coreMetrics.map(({ key, label, description, icon }) => {
-                  const metric = metrics[key as keyof PerformanceMetrics];
+                  const metric = vitals[key as keyof typeof vitals];
                   
                   return (
                     <Card key={key} className={cn(
@@ -334,10 +262,20 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
                             <Badge variant={metric.rating === 'good' ? 'default' : 'secondary'}>
                               {metric.rating.replace('-', ' ').toUpperCase()}
                             </Badge>
-                            {metric.entries && metric.entries.length > 0 && (
-                              <div className="text-xs text-muted-foreground mt-2">
-                                {metric.entries.length} measurement{metric.entries.length !== 1 ? 's' : ''}
-                              </div>
+                            {metric.attribution && (
+                              <details className="text-xs text-muted-foreground mt-2 cursor-pointer">
+                                <summary className="font-medium">Attribution Data</summary>
+                                <div className="mt-2 space-y-1 pl-4">
+                                  {Object.entries(metric.attribution).map(([attrKey, attrValue]) => (
+                                    <div key={attrKey} className="flex justify-between">
+                                      <span className="text-muted-foreground">{attrKey}:</span>
+                                      <span className="font-mono text-xs">
+                                        {typeof attrValue === 'number' ? attrValue.toFixed(2) : String(attrValue)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
                             )}
                           </div>
                         ) : (
@@ -358,7 +296,7 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {otherMetrics.map(({ key, label, icon }) => {
-                      const metric = metrics[key as keyof PerformanceMetrics];
+                      const metric = vitals[key as keyof typeof vitals];
                       
                       return (
                         <div key={key} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
@@ -387,6 +325,59 @@ export function PerformanceDashboard({ visible, onClose }: { visible: boolean; o
                       );
                     })}
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="custom" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ChartLine size={20} />
+                    Custom Performance Metrics
+                  </CardTitle>
+                  <CardDescription>
+                    Application-specific performance measurements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {customMetrics.length > 0 ? (
+                    <div className="space-y-2">
+                      {customMetrics.map((metric, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-md"
+                        >
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{metric.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Started at {metric.startTime.toFixed(2)}ms
+                            </div>
+                            {metric.metadata && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Object.entries(metric.metadata).map(([key, value]) => (
+                                  <span key={key} className="mr-2">
+                                    {key}: {String(value)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-lg font-mono font-bold">
+                            {metric.duration.toFixed(2)}ms
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground text-center py-8">
+                      <div className="mb-2">No custom metrics recorded yet</div>
+                      <div className="text-xs">
+                        Use <code className="bg-muted px-1 rounded">startMeasure()</code> and{' '}
+                        <code className="bg-muted px-1 rounded">endMeasure()</code> in your code
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
