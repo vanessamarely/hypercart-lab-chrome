@@ -529,28 +529,185 @@ export function WebMCPPanel() {
 
   const measureRenderBlocking = async (): Promise<string> => {
     const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const renderBlocking = resources.filter(r => 
-      (r.initiatorType === 'link' || r.initiatorType === 'script') && 
-      (r as any).renderBlockingStatus === 'blocking'
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    
+    const scripts = resources.filter(r => r.initiatorType === 'script');
+    const stylesheets = resources.filter(r => r.initiatorType === 'link' || r.initiatorType === 'css');
+    
+    const renderBlockingScripts = scripts.filter(r => 
+      (r as any).renderBlockingStatus === 'blocking' || 
+      (!r.name.includes('async') && !r.name.includes('defer') && r.startTime < (navigation?.domContentLoadedEventStart || 0))
+    );
+    
+    const renderBlockingStyles = stylesheets.filter(r =>
+      (r as any).renderBlockingStatus === 'blocking' ||
+      r.startTime < (navigation?.domContentLoadedEventStart || 0)
     );
 
-    let analysis = `=== RENDER-BLOCKING RESOURCES ===\n\n`;
-    analysis += `Blocking Resources: ${renderBlocking.length}\n\n`;
+    let analysis = `=== RENDER-BLOCKING RESOURCES ANALYSIS ===\n\n`;
+    
+    const totalBlocking = renderBlockingScripts.length + renderBlockingStyles.length;
+    analysis += `📊 OVERVIEW:\n`;
+    analysis += `Total Blocking Resources: ${totalBlocking}\n`;
+    analysis += `- Scripts: ${renderBlockingScripts.length}\n`;
+    analysis += `- Stylesheets: ${renderBlockingStyles.length}\n`;
+    analysis += `- Non-blocking: ${scripts.length + stylesheets.length - totalBlocking}\n\n`;
 
-    if (renderBlocking.length > 0) {
-      analysis += `RESOURCES:\n`;
-      renderBlocking.forEach((r, idx) => {
-        const name = r.name.split('/').pop() || r.name;
-        analysis += `${idx + 1}. ${name}: ${r.duration.toFixed(0)}ms\n`;
+    if (renderBlockingScripts.length > 0) {
+      analysis += `🚫 BLOCKING SCRIPTS:\n`;
+      renderBlockingScripts.forEach((r, idx) => {
+        const name = r.name.split('/').pop()?.split('?')[0] || r.name;
+        const size = (r.transferSize || r.encodedBodySize || 0) / 1024;
+        analysis += `${idx + 1}. ${name.substring(0, 40)}\n`;
+        analysis += `   Duration: ${r.duration.toFixed(0)}ms | Size: ${size.toFixed(1)}KB\n`;
+        analysis += `   DNS: ${(r.domainLookupEnd - r.domainLookupStart).toFixed(0)}ms | `;
+        analysis += `Connect: ${(r.connectEnd - r.connectStart).toFixed(0)}ms | `;
+        analysis += `Download: ${(r.responseEnd - r.responseStart).toFixed(0)}ms\n`;
       });
+      analysis += `\n`;
+    }
+
+    if (renderBlockingStyles.length > 0) {
+      analysis += `🎨 BLOCKING STYLESHEETS:\n`;
+      renderBlockingStyles.forEach((r, idx) => {
+        const name = r.name.split('/').pop()?.split('?')[0] || r.name;
+        const size = (r.transferSize || r.encodedBodySize || 0) / 1024;
+        analysis += `${idx + 1}. ${name.substring(0, 40)}\n`;
+        analysis += `   Duration: ${r.duration.toFixed(0)}ms | Size: ${size.toFixed(1)}KB\n`;
+      });
+      analysis += `\n`;
+    }
+
+    const scriptBlockingTime = renderBlockingScripts.reduce((sum, r) => sum + r.duration, 0);
+    const styleBlockingTime = renderBlockingStyles.reduce((sum, r) => sum + r.duration, 0);
+    const totalBlockingTime = scriptBlockingTime + styleBlockingTime;
+    const totalBlockingSize = [...renderBlockingScripts, ...renderBlockingStyles]
+      .reduce((sum, r) => sum + (r.transferSize || r.encodedBodySize || 0), 0);
+
+    analysis += `⏱️  BLOCKING TIME BREAKDOWN:\n`;
+    analysis += `Scripts: ${scriptBlockingTime.toFixed(0)}ms (${renderBlockingScripts.length} files)\n`;
+    analysis += `Stylesheets: ${styleBlockingTime.toFixed(0)}ms (${renderBlockingStyles.length} files)\n`;
+    analysis += `Total: ${totalBlockingTime.toFixed(0)}ms\n`;
+    analysis += `Total Size: ${(totalBlockingSize / 1024).toFixed(1)}KB\n\n`;
+
+    const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+    const currentLCP = lcpEntries.length > 0 ? (lcpEntries[lcpEntries.length - 1] as any).startTime : 0;
+    const fcpEntries = performance.getEntriesByName('first-contentful-paint');
+    const currentFCP = fcpEntries.length > 0 ? fcpEntries[0].startTime : 0;
+
+    analysis += `💰 SAVINGS CALCULATOR:\n\n`;
+    
+    if (totalBlocking > 0) {
+      const fcpSavings = totalBlockingTime * 0.75;
+      const lcpSavings = totalBlockingTime * 0.55;
+      const ttiSavings = totalBlockingTime * 0.65;
       
-      const totalDelay = renderBlocking.reduce((sum, r) => sum + r.duration, 0);
-      analysis += `\nTotal Blocking Time: ${totalDelay.toFixed(0)}ms\n`;
-      analysis += `\nPOTENTIAL SAVINGS:\n`;
-      analysis += `• FCP improvement: ~${(totalDelay * 0.7).toFixed(0)}ms\n`;
-      analysis += `• LCP improvement: ~${(totalDelay * 0.5).toFixed(0)}ms\n`;
+      const projectedFCP = Math.max(0, currentFCP - fcpSavings);
+      const projectedLCP = Math.max(0, currentLCP - lcpSavings);
+      
+      analysis += `Current Performance:\n`;
+      if (currentFCP > 0) {
+        analysis += `- FCP: ${(currentFCP / 1000).toFixed(2)}s ${currentFCP < 1800 ? '✓' : currentFCP < 3000 ? '⚠' : '✗'}\n`;
+      }
+      if (currentLCP > 0) {
+        analysis += `- LCP: ${(currentLCP / 1000).toFixed(2)}s ${currentLCP < 2500 ? '✓' : currentLCP < 4000 ? '⚠' : '✗'}\n`;
+      }
+      analysis += `\n`;
+      
+      analysis += `Projected Improvements (if blocking removed):\n`;
+      analysis += `- FCP: ${(projectedFCP / 1000).toFixed(2)}s (saves ~${(fcpSavings / 1000).toFixed(2)}s)\n`;
+      analysis += `- LCP: ${(projectedLCP / 1000).toFixed(2)}s (saves ~${(lcpSavings / 1000).toFixed(2)}s)\n`;
+      analysis += `- TTI: ~${(ttiSavings / 1000).toFixed(2)}s faster\n\n`;
+      
+      const bandwidthSavings = (totalBlockingSize / 1024).toFixed(1);
+      analysis += `Bandwidth Impact:\n`;
+      analysis += `- Initial payload: ${bandwidthSavings}KB that blocks rendering\n`;
+      analysis += `- 3G Download time: ~${((totalBlockingSize / 1024 / 50) * 1000).toFixed(0)}ms\n`;
+      analysis += `- 4G Download time: ~${((totalBlockingSize / 1024 / 500) * 1000).toFixed(0)}ms\n\n`;
+
+      const score = totalBlocking === 0 ? 100 : Math.max(0, 100 - (totalBlockingTime / 100));
+      analysis += `Performance Score Impact: ${score.toFixed(0)}/100\n`;
+      if (score < 50) {
+        analysis += `Rating: ✗ CRITICAL - Blocking is severely impacting performance\n\n`;
+      } else if (score < 75) {
+        analysis += `Rating: ⚠ NEEDS WORK - Significant blocking detected\n\n`;
+      } else {
+        analysis += `Rating: ✓ GOOD - Minimal blocking impact\n\n`;
+      }
     } else {
       analysis += `✓ No render-blocking resources detected!\n`;
+      analysis += `Current performance is optimal for initial rendering.\n\n`;
+    }
+
+    analysis += `🔧 OPTIMIZATION STRATEGIES:\n\n`;
+    
+    if (renderBlockingScripts.length > 0) {
+      analysis += `Scripts (${renderBlockingScripts.length} blocking):\n`;
+      analysis += `1. Add 'defer' attribute to non-critical scripts\n`;
+      analysis += `   Example: <script defer src="...">\n`;
+      analysis += `   Savings: ~${(scriptBlockingTime * 0.9 / 1000).toFixed(2)}s\n\n`;
+      
+      analysis += `2. Add 'async' for independent scripts\n`;
+      analysis += `   Example: <script async src="analytics.js">\n`;
+      analysis += `   Best for: Analytics, ads, social widgets\n\n`;
+      
+      analysis += `3. Inline critical JavaScript (<14KB)\n`;
+      analysis += `   Eliminates network round-trip\n`;
+      analysis += `   Savings: ~${(scriptBlockingTime * 0.4 / 1000).toFixed(2)}s\n\n`;
+      
+      analysis += `4. Code-split and lazy-load non-essential code\n`;
+      analysis += `   Use dynamic import() for route-based splitting\n`;
+      analysis += `   Potential reduction: ${(totalBlockingSize / 1024 * 0.5).toFixed(0)}KB\n\n`;
+    }
+
+    if (renderBlockingStyles.length > 0) {
+      analysis += `Stylesheets (${renderBlockingStyles.length} blocking):\n`;
+      analysis += `1. Inline critical CSS (above-the-fold styles)\n`;
+      analysis += `   Extract ~10-20KB of critical styles\n`;
+      analysis += `   Savings: ~${(styleBlockingTime * 0.7 / 1000).toFixed(2)}s\n\n`;
+      
+      analysis += `2. Use media queries for non-critical CSS\n`;
+      analysis += `   Example: <link rel="stylesheet" href="print.css" media="print">\n`;
+      analysis += `   Defers loading until needed\n\n`;
+      
+      analysis += `3. Preload key stylesheets\n`;
+      analysis += `   Example: <link rel="preload" href="style.css" as="style">\n`;
+      analysis += `   Improves parallel loading\n\n`;
+      
+      analysis += `4. Remove unused CSS (use Coverage tool)\n`;
+      const unusedEstimate = (totalBlockingSize / 1024 * 0.3).toFixed(0);
+      analysis += `   Estimated unused: ~${unusedEstimate}KB\n`;
+      analysis += `   Tools: Chrome Coverage, PurgeCSS\n\n`;
+    }
+
+    analysis += `📋 PRIORITY ACTION ITEMS:\n\n`;
+    
+    const actions = [];
+    
+    if (renderBlockingScripts.length > 2) {
+      actions.push(`HIGH: Defer ${renderBlockingScripts.length} blocking scripts (saves ~${(scriptBlockingTime * 0.8 / 1000).toFixed(1)}s)`);
+    }
+    if (renderBlockingStyles.length > 1) {
+      actions.push(`HIGH: Inline critical CSS (saves ~${(styleBlockingTime * 0.6 / 1000).toFixed(1)}s)`);
+    }
+    if (totalBlockingSize > 150000) {
+      actions.push(`MEDIUM: Reduce bundle size (current: ${(totalBlockingSize / 1024).toFixed(0)}KB)`);
+    }
+    if (renderBlockingScripts.some(r => (r.transferSize || 0) > 100000)) {
+      actions.push(`MEDIUM: Code-split large bundles (>100KB)`);
+    }
+    
+    if (actions.length > 0) {
+      actions.forEach((action, idx) => {
+        analysis += `${idx + 1}. ${action}\n`;
+      });
+      analysis += `\n`;
+      
+      const totalSavings = (totalBlockingTime * 0.75 / 1000).toFixed(2);
+      analysis += `Estimated Total Improvement: ~${totalSavings}s faster page load\n`;
+    } else {
+      analysis += `✓ No high-priority actions needed\n`;
+      analysis += `Continue monitoring and maintain current optimization level\n`;
     }
 
     return analysis;
