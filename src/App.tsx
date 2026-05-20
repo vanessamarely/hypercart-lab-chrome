@@ -3,6 +3,7 @@ import { Navigation } from './components/Navigation';
 import { DebugToggleButton } from './components/DebugPanel';
 import { StatusBar } from './components/StatusBar';
 import { PerformanceDashboardButton } from './components/PerformanceDashboard';
+import { WebMCPButton } from './components/WebMCPPanel';
 import { HomePage } from './components/pages/HomePage';
 import { ProductsPage } from './components/pages/ProductsPage';
 import { ProductDetailPage } from './components/pages/ProductDetailPage';
@@ -73,6 +74,7 @@ function App() {
 
       <Toaster position="bottom-right" richColors />
       <PerformanceDashboardButton />
+      <WebMCPButton />
       <DebugToggleButton />
       <StatusBar />
     </div>

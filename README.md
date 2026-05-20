@@ -75,6 +75,54 @@ VITE_UNSPLASH_ACCESS_KEY=your_actual_access_key_here
 - **Production**: Add `?debug=1` to URL to show debug panel
 - **Toggle Count**: Badge shows number of active performance flags
 
+## Web MCP Integration
+
+The app includes **Web MCP (Model Context Protocol)** integration for AI-powered performance debugging assistance.
+
+### Accessing Web MCP
+
+Add `?debug=1` to the URL to enable both the debug panel and Web MCP features. A "Web MCP" button appears on the bottom left.
+
+### Features
+
+**🛠️ Tools Tab**: Browse available MCP tools for performance analysis
+- `analyze_performance` - Get optimization suggestions for current page
+- `get_web_vitals` - Retrieve Core Web Vitals measurements
+- `simulate_user_flow` - Test user interaction scenarios
+- `capture_trace` - Capture performance traces for specific actions
+- `compare_metrics` - Compare before/after optimization results
+
+**📦 Resources Tab**: Access app performance data via MCP resource URIs
+- `perf://current-vitals` - Real-time Core Web Vitals data
+- `perf://trace-data` - Latest captured performance trace
+- `perf://network-waterfall` - Network request timeline
+- `perf://long-tasks` - Detected long tasks blocking main thread
+- `app://debug-flags` - Current debug configuration state
+
+**💬 Prompt Tab**: Ask AI for performance guidance
+- Use example prompts or write custom questions
+- Get contextual advice based on current app state
+- Receive actionable optimization suggestions
+- Copy responses for documentation
+
+### Example Use Cases
+
+**During a Talk**:
+1. Enable a performance issue (e.g., `simulateLongTask`)
+2. Ask MCP: "What's causing INP issues on this page?"
+3. Show AI's analysis to audience
+4. Apply suggested fix and re-measure
+
+**For Learning**:
+- "Explain the difference between LCP and FCP"
+- "What are the top 3 performance bottlenecks?"
+- "How do I optimize this checkout flow?"
+
+**For Development**:
+- Query resources to get structured performance data
+- Use tools to automate common debugging tasks
+- Generate test scenarios programmatically
+
 ## Routes & Performance Labs
 
 ### 🏠 Home Page (`/`) - LCP/CLS Lab

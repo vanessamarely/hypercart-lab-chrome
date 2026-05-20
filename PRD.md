@@ -26,6 +26,13 @@ Multiple routes with focused performance scenarios, persistent debugging state, 
 - Progression: Click gear → View grouped toggles by performance type → Toggle features → See immediate impact
 - Success criteria: Toggles persist in localStorage and affect metrics measurably
 
+**Web MCP (Model Context Protocol) Integration**
+- Functionality: AI-powered performance analysis panel with tools, resources, and custom prompts
+- Purpose: Demonstrate how to integrate AI assistance for debugging performance issues using MCP
+- Trigger: URL parameter `?debug=1` shows Web MCP button on bottom left
+- Progression: Click Web MCP → Explore available tools (analyze_performance, get_web_vitals, etc.) → Browse resources (trace data, network waterfall) → Submit custom prompts for AI analysis → Receive actionable optimization suggestions
+- Success criteria: AI provides contextual performance advice based on current app state, tools are properly documented with schemas, resources are accessible and queryable
+
 **Home Page (LCP/CLS Lab)**
 - Functionality: Hero image with Core Web Vitals optimization toggles
 - Purpose: Demonstrate Largest Contentful Paint and Cumulative Layout Shift fixes
