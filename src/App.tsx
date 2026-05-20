@@ -9,6 +9,7 @@ import { ProductsPage } from './components/pages/ProductsPage';
 import { ProductDetailPage } from './components/pages/ProductDetailPage';
 import { SearchPage } from './components/pages/SearchPage';
 import { CheckoutPage } from './components/pages/CheckoutPage';
+import { WebMCPDashboard } from './components/WebMCPDashboard';
 import { Toaster } from 'sonner';
 
 if (import.meta.env.DEV) {
@@ -17,7 +18,7 @@ if (import.meta.env.DEV) {
   });
 }
 
-type Page = 'home' | 'products' | 'search' | 'checkout' | 'product-detail';
+type Page = 'home' | 'products' | 'search' | 'checkout' | 'product-detail' | 'webmcp';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -59,6 +60,8 @@ function App() {
         return <SearchPage onProductClick={handleProductClick} onNavigate={handleNavigation} />;
       case 'checkout':
         return <CheckoutPage onNavigate={handleNavigation} />;
+      case 'webmcp':
+        return <WebMCPDashboard />;
       default:
         return <HomePage />;
     }

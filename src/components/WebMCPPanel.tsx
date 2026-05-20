@@ -33,6 +33,16 @@ export function WebMCPPanel() {
 
   const mockTools: MCPTool[] = [
     {
+      name: 'get_active_cart',
+      description: 'Query shopping cart state directly without UI interaction - returns item count, products, quantities, and total',
+      inputSchema: { 
+        type: 'object', 
+        properties: { 
+          includeDetails: { type: 'boolean', description: 'Include full product details' }
+        } 
+      }
+    },
+    {
       name: 'analyze_lcp',
       description: 'Deep analysis of Largest Contentful Paint including element attribution, critical path, and preload opportunities',
       inputSchema: { 
@@ -296,6 +306,7 @@ export function WebMCPPanel() {
   ];
 
   const examplePrompts = [
+    "What items are in the shopping cart right now? Use get_active_cart",
     "Why is my LCP slow? Analyze the critical rendering path and suggest preload opportunities",
     "Identify all long tasks >50ms and recommend code-splitting strategies",
     "What's causing layout shifts? Check for missing image dimensions and late-loading content",
@@ -304,8 +315,7 @@ export function WebMCPPanel() {
     "Which third-party scripts are blocking the main thread the most?",
     "Audit all images for format optimization and lazy loading opportunities",
     "Generate a prioritized optimization report with estimated impact",
-    "Trace the critical path for LCP element and identify bottlenecks",
-    "What cache optimization opportunities exist for repeat visits?"
+    "Trace the critical path for LCP element and identify bottlenecks"
   ];
 
   const handleCopy = (text: string, label: string) => {
@@ -324,6 +334,9 @@ export function WebMCPPanel() {
       let result = '';
 
       switch (toolName) {
+        case 'get_active_cart':
+          result = await getActiveCart();
+          break;
         case 'analyze_lcp':
           result = await analyzeLCP();
           break;
@@ -360,6 +373,40 @@ export function WebMCPPanel() {
       toast.error('Tool execution failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getActiveCart = async (): Promise<string> => {
+    try {
+      const cartString = localStorage.getItem('hypercart-cart');
+      const cart = cartString ? JSON.parse(cartString) : [];
+      
+      let result = `=== GET ACTIVE CART ===\n\n`;
+      result += `CART SUMMARY:\n`;
+      result += `- Unique Items: ${cart.length}\n`;
+      result += `- Total Items: ${cart.reduce((sum: number, item: any) => sum + item.quantity, 0)}\n`;
+      result += `- Subtotal: $${cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}\n\n`;
+      
+      if (cart.length > 0) {
+        result += `CART ITEMS:\n`;
+        cart.forEach((item: any, idx: number) => {
+          result += `${idx + 1}. ${item.name}\n`;
+          result += `   ID: ${item.productId} | Qty: ${item.quantity} | Price: $${item.price} | Total: $${(item.price * item.quantity).toFixed(2)}\n`;
+        });
+        result += `\n`;
+      } else {
+        result += `Cart is empty.\n\n`;
+      }
+      
+      result += `DATA SOURCE:\n`;
+      result += `- Storage: localStorage\n`;
+      result += `- Key: hypercart-cart\n`;
+      result += `- Access: Direct read without UI interaction\n`;
+      result += `- Use Case: AI-assisted debugging and analysis\n`;
+      
+      return result;
+    } catch (error) {
+      return `Error retrieving cart: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   };
 

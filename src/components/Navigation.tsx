@@ -18,6 +18,7 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     { path: 'products', label: 'Products' },
     { path: 'search', label: 'Search' },
     { path: 'checkout', label: 'Checkout' },
+    { path: 'webmcp', label: 'Web MCP' },
   ];
 
   const cartItemCount = (cart || []).reduce((total: number, item: CartItem) => total + item.quantity, 0);

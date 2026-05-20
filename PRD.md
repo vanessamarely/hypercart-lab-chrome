@@ -27,11 +27,26 @@ Multiple routes with focused performance scenarios, persistent debugging state, 
 - Success criteria: Toggles persist in localStorage and affect metrics measurably
 
 **Web MCP (Model Context Protocol) Integration**
-- Functionality: AI-powered performance analysis panel with tools, resources, and custom prompts
-- Purpose: Demonstrate how to integrate AI assistance for debugging performance issues using MCP
-- Trigger: URL parameter `?debug=1` shows Web MCP button on bottom left
-- Progression: Click Web MCP → Explore available tools (analyze_performance, get_web_vitals, etc.) → Browse resources (trace data, network waterfall) → Submit custom prompts for AI analysis → Receive actionable optimization suggestions
-- Success criteria: AI provides contextual performance advice based on current app state, tools are properly documented with schemas, resources are accessible and queryable
+- Functionality: Complete AI-powered performance debugging system with:
+  - Web MCP Panel: Floating panel (debug mode) with tools, resources, prompts, and execution capabilities
+  - Web MCP Dashboard: Full-page dashboard with real-time metrics, interaction logging, snapshots, and cart inspector
+  - get_active_cart Tool: Imperative MCP tool that queries cart state directly from localStorage without UI interaction
+  - 15+ specialized performance analysis tools (analyze_lcp, detect_long_tasks, measure_render_blocking, etc.)
+  - 16+ queryable performance resources (current vitals, LCP attribution, network waterfall, etc.)
+  - AI-powered custom prompts using GPT-4o-mini with full performance context
+- Purpose: Demonstrate Chrome DevTools MCP extension integration for AI-assisted performance debugging, enabling IA to inspect app state and metrics directly
+- Trigger: URL parameter `?debug=1` shows Web MCP button (bottom left) for panel, navigation "Web MCP" link for dashboard
+- Progression: 
+  - Panel: Click Web MCP button → Switch tabs (Tools/Resources/Execute/Prompt) → Execute tools with real data → Copy results → Submit custom prompts → Get AI analysis
+  - Dashboard: Navigate to Web MCP page → View real-time Core Web Vitals → Execute MCP tools (get_active_cart, analyze_lcp, etc.) → View interaction log → Take performance snapshots → Compare before/after → Inspect cart via MCP
+- Success criteria: 
+  - All 15+ tools execute with real performance data from Performance API
+  - get_active_cart returns accurate cart state without touching UI
+  - AI prompts provide contextual advice based on current metrics and debug flags
+  - Dashboard shows real-time metric updates every 2s when recording
+  - Snapshots enable before/after comparison of optimizations
+  - Interaction log tracks all tool executions with timestamps and durations
+  - Cart inspector displays data retrieved via get_active_cart MCP tool
 
 **Home Page (LCP/CLS Lab)**
 - Functionality: Hero image with Core Web Vitals optimization toggles
