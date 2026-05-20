@@ -123,7 +123,7 @@ export function WebMCPPanel() {
     setLlmResponse('');
     
     try {
-      const prompt = spark.llmPrompt`You are a web performance expert analyzing the HyperCart Lab demo app. 
+      const promptText = `You are a web performance expert analyzing the HyperCart Lab demo app. 
       
 Context: This is a performance debugging demo app with toggleable optimizations for LCP, INP, and CLS.
 
@@ -131,7 +131,7 @@ User question: ${customPrompt}
 
 Provide specific, actionable advice based on Chrome DevTools Performance Panel best practices. Reference specific metrics, traces, and optimization techniques.`;
 
-      const response = await spark.llm(prompt, 'gpt-4o-mini');
+      const response = await window.spark.llm(promptText, 'gpt-4o-mini');
       setLlmResponse(response);
     } catch (error) {
       toast.error('Failed to get LLM response');

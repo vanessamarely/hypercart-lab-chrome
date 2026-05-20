@@ -59,12 +59,14 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        PreviousMonthButton: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        NextMonthButton: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
+        PreviousMonthButton: ({ className, ...props }) => {
+          const { onCopy, onCut, onPaste, ...iconProps } = props as any
+          return <ChevronLeft className={cn("size-4", className)} {...iconProps} />
+        },
+        NextMonthButton: ({ className, ...props }) => {
+          const { onCopy, onCut, onPaste, ...iconProps } = props as any
+          return <ChevronRight className={cn("size-4", className)} {...iconProps} />
+        },
       }}
       {...props}
     />
