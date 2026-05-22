@@ -10,9 +10,9 @@
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview",
-        "clean": "rm -rf node_modules/.vite && rm -rf node_modules/.cache",
-        "repair": "rm -rf node_modules/.vite && rm -rf node_modules/.cache && vite optimize",
-        "postinstall": "vite optimize --force"
+        "clean": "rm -rf node_modules/.vite && rm -rf node_modules/.cache && rm -rf .vite",
+        "repair": "npm run clean && vite optimize --force",
+        "postinstall": "npm run clean"
     },
     "dependencies": {
         "@github/spark": "^0.0.1",

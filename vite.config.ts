@@ -20,8 +20,11 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: ['@github/spark']
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    exclude: ['@github/spark'],
+    esbuildOptions: {
+      target: 'es2020'
+    }
   },
   server: {
     port: 5173,
@@ -31,8 +34,15 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2020',
     commonjsOptions: {
       include: [/node_modules/]
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
     }
-  }
+  },
+  clearScreen: false
 });
