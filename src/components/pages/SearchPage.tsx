@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance, microYield } from '@/lib/performance-utils';
 import { Product, CartItem } from '@/lib/types';

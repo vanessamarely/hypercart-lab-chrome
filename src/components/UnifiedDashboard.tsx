@@ -31,7 +31,7 @@ import {
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useWebVitals, useCustomMetrics, usePerformanceExport } from '@/hooks/use-web-vitals';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 import { toast } from 'sonner';
 
 interface WebVitalMetric {

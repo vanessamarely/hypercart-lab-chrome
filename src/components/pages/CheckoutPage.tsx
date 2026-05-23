@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Trash } from '@phosphor-icons/react';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 import { getFlags } from '@/lib/performance-flags';
 import { addPerformanceMark, measurePerformance } from '@/lib/performance-utils';
 import { CartItem } from '@/lib/types';

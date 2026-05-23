@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 
 interface MCPInteraction {
   id: string;

@@ -2,7 +2,7 @@ import React from 'react';
 import { ShoppingCart } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 import { CartItem } from '@/lib/types';
 
 interface NavigationProps {
