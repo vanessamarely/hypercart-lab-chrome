@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ShoppingCart } from '@phosphor-icons/react';
 import { Product, CartItem } from '@/lib/types';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '@/lib/useKV';
 
 interface CartAddedModalProps {
   open: boolean;

@@ -22,6 +22,14 @@ interface MCPResource {
   mimeType?: string;
 }
 
+declare global {
+  interface Window {
+    spark?: {
+      llm?: (prompt: string, model: string) => Promise<string>;
+    };
+  }
+}
+
 export function WebMCPPanel() {
   const [expanded, setExpanded] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
@@ -869,6 +877,10 @@ Provide specific, actionable advice for this demo app. Reference:
 5. How to verify improvements using the Performance Loop
 
 Focus on techniques that work well in a live demo presentation.`;
+
+      if (!window.spark?.llm) {
+        throw new Error('Spark LLM is not available in this environment');
+      }
 
       const response = await window.spark.llm(promptText, 'gpt-4o-mini');
       setLlmResponse(response);
