@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type SetValue<T> = T | ((current: T) => T);
 
@@ -7,24 +7,34 @@ function isBrowser() {
 }
 
 export function useKV<T>(key: string, initialValue: T): [T, (value: SetValue<T>) => void] {
+  const initialValueRef = useRef(initialValue);
+
   const readValue = useCallback((): T => {
     if (!isBrowser()) {
-      return initialValue;
+      return initialValueRef.current;
     }
 
     try {
       const item = window.localStorage.getItem(key);
-      return item !== null ? (JSON.parse(item) as T) : initialValue;
+      return item !== null ? (JSON.parse(item) as T) : initialValueRef.current;
     } catch {
-      return initialValue;
+      return initialValueRef.current;
     }
-  }, [initialValue, key]);
+  }, [key]);
 
   const [value, setValue] = useState<T>(() => readValue());
 
   useEffect(() => {
-    setValue(readValue());
-  }, [readValue]);
+    if (!isBrowser()) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Gracefully ignore storage write failures.
+    }
+  }, [key, value]);
 
   useEffect(() => {
     if (!isBrowser()) {
@@ -45,22 +55,11 @@ export function useKV<T>(key: string, initialValue: T): [T, (value: SetValue<T>)
 
   const setStoredValue = useCallback((nextValue: SetValue<T>) => {
     setValue((currentValue) => {
-      const resolvedValue =
-        typeof nextValue === 'function'
-          ? (nextValue as (current: T) => T)(currentValue)
-          : nextValue;
-
-      if (isBrowser()) {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(resolvedValue));
-        } catch {
-          // Gracefully ignore storage write failures.
-        }
-      }
-
-      return resolvedValue;
+      return typeof nextValue === 'function'
+        ? (nextValue as (current: T) => T)(currentValue)
+        : nextValue;
     });
-  }, [key]);
+  }, []);
 
   return [value, setStoredValue];
 }

@@ -879,7 +879,7 @@ Provide specific, actionable advice for this demo app. Reference:
 Focus on techniques that work well in a live demo presentation.`;
 
       if (!window.spark?.llm) {
-        throw new Error('Spark LLM is not available in this environment');
+        throw new Error('Spark LLM is unavailable in this environment.');
       }
 
       const response = await window.spark.llm(promptText, 'gpt-4o-mini');
